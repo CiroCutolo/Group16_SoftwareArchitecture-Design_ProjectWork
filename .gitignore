@@ -1,0 +1,35 @@
+# Ignora le cartelle specifiche di NetBeans
+nbproject/private/
+build/
+nbbuild/
+dist/
+nbdist/
+.nb-gradle/
+
+# File temporanei o specifici dell'ambiente
+*.log
+*.class
+*.jar
+*.war
+*.ear
+
+# File di backup o temporanei
+*~
+*.swp
+.DS_Store
+Thumbs.db
+
+# Ignora cartelle di build Gradle/Maven (se presenti)
+.gradle/
+out/
+target/
+
+# IDE vari (in caso apri anche con IntelliJ o Eclipse)
+.idea/
+*.iml
+*.ipr
+*.iws
+.project
+.classpath
+.settings/
+/DrawingApplication/nbproject/private/
