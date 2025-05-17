@@ -17,7 +17,20 @@
             <Insets top="10.0" />
          </padding>
          <children>
-            <HBox prefHeight="141.0" prefWidth="212.0" />
+            <HBox prefHeight="141.0" prefWidth="212.0">
+               <children>
+                  <VBox prefHeight="200.0" prefWidth="100.0">
+                     <children>
+                        <ToggleButton fx:id="lineButton" mnemonicParsing="false" onAction="#selectLine" prefHeight="31.0" prefWidth="102.0">
+                           <toggleGroup>
+                              <ToggleGroup fx:id="shapeToggleGroup" />
+                           </toggleGroup>
+                        </ToggleButton>
+                        <ToggleButton fx:id="rectangleButton" mnemonicParsing="false" onAction="#selectRectangle" prefHeight="31.0" prefWidth="102.0" toggleGroup="$shapeToggleGroup" />
+                        <ToggleButton fx:id="ellipseButton" mnemonicParsing="false" onAction="#selectEllipse" prefHeight="31.0" prefWidth="102.0" toggleGroup="$shapeToggleGroup" />
+                     </children>
+                  </VBox>
+               </children></HBox>
             <HBox prefHeight="141.0" prefWidth="212.0" />
             <HBox fx:id="colorToolbarSection" prefHeight="141.0" prefWidth="212.0">
                <children>
@@ -25,7 +38,7 @@
                      <children>
                         <VBox prefHeight="200.0" prefWidth="100.0">
                            <children>
-                              <RadioButton fx:id="perimeterRadio" mnemonicParsing="false" prefHeight="21.0" prefWidth="66.0" text="Fill" textFill="#a6a6a6">
+                              <RadioButton fx:id="fillRadio" mnemonicParsing="false" prefHeight="21.0" prefWidth="66.0" text="Fill" textFill="#a6a6a6">
                                  <font>
                                     <Font name="Arial Nova" size="16.0" />
                                  </font>
@@ -34,7 +47,7 @@
                         </VBox>
                         <VBox prefHeight="200.0" prefWidth="100.0">
                            <children>
-                              <RadioButton fx:id="fillRadio" mnemonicParsing="false" prefHeight="21.0" prefWidth="66.0" textFill="#a6a6a6">
+                              <RadioButton fx:id="perimeterRadio" mnemonicParsing="false" prefHeight="21.0" prefWidth="66.0" text="Border" textFill="#a6a6a6">
                                  <font>
                                     <Font name="Arial Nova" size="16.0" />
                                  </font>
