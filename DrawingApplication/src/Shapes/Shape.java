@@ -13,6 +13,7 @@ import javafx.scene.Node;
 public abstract class Shape implements Serializable{
     protected String perimetralColorString = Color.BLACK.toString(); // Viene definito un colore perimetrale di base
     protected String internalColorString = Color.TRANSPARENT.toString(); // Viene definito un colore interno di base
+    protected javafx.scene.shape.Shape fxShape;
     protected double initialX, initialY, finalX, finalY; //Vengono definite le dimensioni comuni alle forme di inizio e fine pressione
 
     /**
@@ -43,6 +44,14 @@ public abstract class Shape implements Serializable{
         this.perimetralColorString = new_color.toString();
     }
     
-    //
-    public abstract Node getNode();
+
+    // Permette di manipolare sempre lo stesso oggetto fxShape
+    public javafx.scene.shape.Shape getFXShape() {
+        return fxShape;
+    }
+
+    // Salva l'oggetto fxShape da manipolare
+    public void setFXShape(javafx.scene.shape.Shape fxShape) {
+        this.fxShape = fxShape;
+    }
 }
