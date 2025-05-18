@@ -10,6 +10,7 @@ import javafx.scene.paint.Color;
  */
 public abstract class Shape {
     
+    protected javafx.scene.shape.Shape fxShape;
     protected Color perimetralColor = Color.BLACK; // Viene definito un colore perimetrale di base
     protected Color internalColor = Color.TRANSPARENT; // Viene definito un colore interno di base
     protected double initialX, initialY, finalX, finalY; //Vengono definite le dimensioni comuni alle forme di inizio e fine pressione
@@ -40,5 +41,15 @@ public abstract class Shape {
     // Modifica dedito alla modifica del colore interno alla forma
     public void setInternalColor(Color new_color){
         this.internalColor = new_color; 
+    }
+    
+    // Permette di manipolare sempre lo stesso oggetto fxShape
+    public javafx.scene.shape.Shape getFXShape() {
+        return fxShape;
+    }
+
+    // Salva l'oggetto fxShape da manipolare
+    public void setFXShape(javafx.scene.shape.Shape fxShape) {
+        this.fxShape = fxShape;
     }
 }
