@@ -52,5 +52,5 @@ public class EllipseShape extends Shape implements Serializable{
         return ellipse;
         
     }
-    
+
 }

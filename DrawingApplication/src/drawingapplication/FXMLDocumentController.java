@@ -22,15 +22,19 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.Toggle;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -55,6 +59,8 @@ public class FXMLDocumentController implements Initializable {
     private List<Shape> drawShapes = new ArrayList<>(); 
     private List<Shape> shapes = new ArrayList<>();
     private Shape selectedShape = null;
+    private ContextMenu shapeMenu;
+    private Circle selectedColorButton = null;
 
     
     @FXML
@@ -86,6 +92,8 @@ public class FXMLDocumentController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
 
+        createContextMenu();
+        
         purpleButton.setFill(Color.PURPLE);
         blackButton.setFill(Color.BLACK);
         pinkButton.setFill(Color.PINK);
@@ -119,7 +127,8 @@ public class FXMLDocumentController implements Initializable {
         drawingPane.setOnMousePressed(event -> {
         if (selectedShapeType == null) return;
         startX = event.getX();
-        startY = event.getY();
+        startY = event.getY();        
+       
     });
 
     //Trascinamento mouse
@@ -133,7 +142,6 @@ public class FXMLDocumentController implements Initializable {
         //Crea la forma provvisoria (preview)
         Shape temp = ShapeFactory.createShape(selectedShapeType, startX, startY, endX, endY);
         javafx.scene.shape.Shape fxTempShape = temp.toFXShape();
-
         //Stile del preview
         fxTempShape.getStrokeDashArray().addAll(5.0, 5.0); // tratteggiata
         fxTempShape.setStroke(Color.GRAY);
@@ -164,10 +172,24 @@ public class FXMLDocumentController implements Initializable {
 
         //Crea la forma definitiva
         Shape finalShape = ShapeFactory.createShape(selectedShapeType, startX, startY, endX, endY,perimetralColor,fillingColor);
-        javafx.scene.shape.Shape fxFinalShape = finalShape.toFXShape();
-
-        drawingPane.getChildren().add(fxFinalShape);
+        javafx.scene.shape.Shape fxShape = finalShape.toFXShape();
+        finalShape.setFXShape(fxShape);
+        drawingPane.getChildren().add(fxShape);
+        drawShapes.add(finalShape);
         shapes.add(finalShape);
+        event.consume();
+    });
+    
+    /**
+     * @author ciroc
+     */
+    drawingPane.setOnMouseClicked(event -> {
+        if (event.getButton() == MouseButton.SECONDARY && selectedShape != null) {
+            shapeMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
+        } else {
+            shapeMenu.hide();
+            shapeSelectionHandler(event); // Qui ci metti il metodo che hai già
+        }
     });
         
     }  
@@ -179,6 +201,9 @@ public class FXMLDocumentController implements Initializable {
     //       1) Inserire un pulsante che resetti ai colori predefiniti
     //       2) Quando il pulsante "fill" non è selezionato allora usa il colore predefinito
     //          (lo stesso per il "border" o "perimeter").
+    /**
+     * @author ciroc
+     */
     private void handleColorSelection(Color color) {
         
         if (perimeterRadio.isSelected()) {
@@ -188,37 +213,69 @@ public class FXMLDocumentController implements Initializable {
         }
     }
 
+    /**
+     * @author ciroc
+     */
     @FXML
     private void removeHoverEffect(javafx.scene.input.MouseEvent event) {
         Circle circle = (Circle) event.getSource();
-        circle.setEffect(hover);
+        
+        if (circle == selectedColorButton) return;
+        
+        circle.setEffect(null); 
+        
         ScaleTransition scaling = new ScaleTransition(Duration.millis(150), circle);
         scaling.setToX(1.0);
         scaling.setToY(1.0);
         scaling.play();
     }
 
+    /**
+     * @author ciroc
+     */
     @FXML
     private void hoverEffect(javafx.scene.input.MouseEvent event) {
         Circle circle = (Circle) event.getSource();
-        circle.setEffect(null);
+        
+        if (circle == selectedColorButton) return;
+        
+        DropShadow shadow = new DropShadow();
+        shadow.setColor(Color.LIGHTGRAY);
+        shadow.setRadius(10);
+        circle.setEffect(shadow);
+        
         ScaleTransition scaling = new ScaleTransition(Duration.millis(150), circle);
-        scaling.setToX(1.0);
-        scaling.setToY(1.0);
+        scaling.setToX(1.1);
+        scaling.setToY(1.1);
         scaling.play();
     }
 
+    /**
+     * @author ciroc
+     */
     @FXML
-    //Todo - L'effetto non si nota abbastanza. E' difficile capire quale colore è attivo (ultimo selezionato).
     private void clickEffect(javafx.scene.input.MouseEvent event) {
         Circle circle = (Circle) event.getSource();
-        ScaleTransition scaling = new ScaleTransition(Duration.millis(100), circle);
+        
+        /*ScaleTransition scaling = new ScaleTransition(Duration.millis(100), circle);
         scaling.setToX(1.4);
         scaling.setToY(1.4);
         scaling.setAutoReverse(true);
         scaling.setCycleCount(2);
         scaling.play();
         
+        circle.setStroke(Color.BLACK);
+        circle.setStrokeWidth(2);
+        
+        DropShadow selection = new DropShadow();
+        selection.setColor(Color.BLACK);
+        selection.setRadius(10);
+        circle.setEffect(selection);
+        */
+        circle.setFill(Color.BLACK);
+        
+        selectedColorButton = circle;
+
     }
 
     
@@ -264,15 +321,20 @@ public class FXMLDocumentController implements Initializable {
         node.setGraphic(img);
     }
     
+    /**
+     * @author ciroc
+     */
     @FXML
     private void shapeSelectionHandler(javafx.scene.input.MouseEvent event) {
         double x = event.getX();
         double y = event.getY();
-
+        selectedShape = null;
+        
         for(int i = drawShapes.size() - 1; i >= 0; i--){
             Shape shape = drawShapes.get(i);
             
             if(shape.toFXShape().contains(x,y)){
+                
                 selectedShape = shape;
                 break;
             }
@@ -281,27 +343,53 @@ public class FXMLDocumentController implements Initializable {
         visualShapeSelectionHandler(selectedShape);
     }
     
+    /**
+     * @author ciroc
+     */
     public void visualShapeSelectionHandler(Shape shape){
         
         if(selectedShape != null)
-            deselectShape(selectedShape);
+            deselectShape(selectedShape.getFXShape());
         
         selectedShape = shape;
         
         if(selectedShape != null)
-            selectShape(selectedShape);
+            selectShape(selectedShape.getFXShape());
     }
     
-    private void selectShape(Shape shape){
+    /**
+     * @author ciroc
+     */
+    private void selectShape(javafx.scene.shape.Shape shape){
         DropShadow selection = new DropShadow();
-        selection.setColor(Color.SKYBLUE);
-        selection.setWidth(16);
-        selection.setHeight(16);
-        shape.toFXShape().setEffect(selection);
+        selection.setColor(Color.BLACK);
+        selection.setRadius(15);
+        shape.setEffect(selection);
+    }   
+    
+    /**
+     * @author ciroc
+     */
+    private void deselectShape(javafx.scene.shape.Shape shape){
+        shape.setEffect(null);
     }
     
-    private void deselectShape(Shape shape){
-        shape.toFXShape().setEffect(null);
+    /**
+     * @author ciroc
+     */
+    private void createContextMenu() {
+        shapeMenu = new ContextMenu();
+        MenuItem deletion = new MenuItem("Elimina");
+        
+        deletion.setOnAction(e -> {
+            if (selectedShape != null) {
+                drawingPane.getChildren().remove(selectedShape.getFXShape());
+                drawShapes.remove(selectedShape);
+                selectedShape = null;
+            }
+        });
+        
+        shapeMenu.getItems().add(deletion);
     }
 
     @FXML
@@ -355,5 +443,4 @@ public class FXMLDocumentController implements Initializable {
 
         System.out.println("Interfaccia aggiornata. Numero forme: " + shapes.size());
     }
-
 }
