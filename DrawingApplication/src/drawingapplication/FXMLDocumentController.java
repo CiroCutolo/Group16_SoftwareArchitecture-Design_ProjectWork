@@ -7,6 +7,12 @@ package drawingapplication;
 import Shapes.Shape;
 import Shapes.ShapeFactory;
 import java.awt.event.MouseEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
@@ -15,6 +21,7 @@ import javafx.animation.ScaleTransition;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.RadioButton;
@@ -31,6 +38,7 @@ import javafx.scene.layout.Region;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
 
@@ -45,6 +53,7 @@ public class FXMLDocumentController implements Initializable {
     private Color fillingColor = Color.TRANSPARENT;
     private final DropShadow hover = new DropShadow(10, Color.GRAY);
     private List<Shape> drawShapes = new ArrayList<>(); 
+    private List<Shape> shapes = new ArrayList<>();
     private Shape selectedShape = null;
 
     
@@ -69,6 +78,10 @@ public class FXMLDocumentController implements Initializable {
     private javafx.scene.shape.Shape previewShape = null;
     @FXML
     private ToggleGroup radioColorButtonToggleGroup;
+    @FXML
+    private Button salvaButton;
+    @FXML
+    private Button CaricaButton;
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -154,6 +167,7 @@ public class FXMLDocumentController implements Initializable {
         javafx.scene.shape.Shape fxFinalShape = finalShape.toFXShape();
 
         drawingPane.getChildren().add(fxFinalShape);
+        shapes.add(finalShape);
     });
         
     }  
@@ -288,6 +302,58 @@ public class FXMLDocumentController implements Initializable {
     
     private void deselectShape(Shape shape){
         shape.toFXShape().setEffect(null);
+    }
+
+    @FXML
+    private void salvataggio(javafx.scene.input.MouseEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Salva Disegno");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Disegni serializzati", "*.ser")
+        );
+        File file = fileChooser.showSaveDialog(drawingPane.getScene().getWindow());
+
+        if (file != null) {
+            try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
+             out.writeObject(shapes);
+            } catch (IOException ex) {
+                ex.printStackTrace();
+            }
+        }
+        
+        System.out.println("Forme salvate: " + shapes.size());
+    }
+
+    @FXML
+    private void caricamento(javafx.scene.input.MouseEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Carica Disegno");
+        fileChooser.getExtensionFilters().add(
+            new FileChooser.ExtensionFilter("Disegni serializzati", "*.ser")
+        );
+        File file = fileChooser.showOpenDialog(drawingPane.getScene().getWindow());
+
+        if (file != null) {
+            try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
+            @SuppressWarnings("unchecked")
+            List<Shape> loadedShapes = (List<Shape>) in.readObject();
+            shapes = loadedShapes;
+
+            refreshDrawingPane(); 
+            } catch (IOException | ClassNotFoundException ex) {
+                ex.printStackTrace();
+            }
+        }
+    }
+    
+    private void refreshDrawingPane() {
+        drawingPane.getChildren().clear();
+
+        for (Shape shape : shapes) {
+            drawingPane.getChildren().add(shape.getNode());
+        }
+
+        System.out.println("Interfaccia aggiornata. Numero forme: " + shapes.size());
     }
 
 }

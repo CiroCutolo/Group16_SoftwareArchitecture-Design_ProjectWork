@@ -1,5 +1,8 @@
 package Shapes;
 
+import java.io.Serializable;
+import javafx.scene.Node;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 /**
@@ -9,7 +12,7 @@ import javafx.scene.shape.Rectangle;
  * 
  * @author ciroc
  */
-public class RectangleShape extends Shape {
+public class RectangleShape extends Shape implements Serializable{
     
     /**
      * Costruttore della forma rettangolare.
@@ -42,9 +45,23 @@ public class RectangleShape extends Shape {
         Rectangle rectangle = new Rectangle(angleX, angleY, rec_width, rec_height);
         
         // Applicazione delle proprietà visive
-        rectangle.setStroke(perimetralColor); // colore del bordo
-        rectangle.setFill(internalColor);     // colore di riempimento
+        rectangle.setStroke(Color.valueOf(perimetralColorString)); // colore del bordo
+        rectangle.setFill(Color.valueOf(internalColorString));     // colore di riempimento
         
         return rectangle;
     }
+    
+    @Override
+    public Node getNode() {
+        double x = Math.min(initialX, finalX);
+        double y = Math.min(initialY, finalY);
+        double width = Math.abs(finalX - initialX);
+        double height = Math.abs(finalY - initialY);
+
+        Rectangle rect = new Rectangle(x, y, width, height);
+        rect.setFill(Color.valueOf(internalColorString));
+        rect.setStroke(Color.valueOf(perimetralColorString)); 
+        return rect;
+    }
+
 }

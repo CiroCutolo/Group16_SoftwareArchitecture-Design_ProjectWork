@@ -1,17 +1,18 @@
 package Shapes;
 
 import javafx.scene.paint.Color;
-
+import java.io.Serializable;
+import javafx.scene.Node;
+        
 /**
  * La classe astratta Shape rappresenta una macro-categoria di forme.Introduce il metodo 'toFXShape', in modo da generare correttamente un oggetto 
  di tipo 'Shape' di JavaFX.
  * 
  * @author ciroc
  */
-public abstract class Shape {
-    
-    protected Color perimetralColor = Color.BLACK; // Viene definito un colore perimetrale di base
-    protected Color internalColor = Color.TRANSPARENT; // Viene definito un colore interno di base
+public abstract class Shape implements Serializable{
+    protected String perimetralColorString = Color.BLACK.toString(); // Viene definito un colore perimetrale di base
+    protected String internalColorString = Color.TRANSPARENT.toString(); // Viene definito un colore interno di base
     protected double initialX, initialY, finalX, finalY; //Vengono definite le dimensioni comuni alle forme di inizio e fine pressione
 
     /**
@@ -34,11 +35,14 @@ public abstract class Shape {
     
     // Metodo dedito alla modifica del colore perimetrale della forma
     public void setPerimetralColor(Color new_color){
-        this.perimetralColor = new_color;
+        this.internalColorString = new_color.toString();
     }
     
     // Modifica dedito alla modifica del colore interno alla forma
-    public void setInternalColor(Color new_color){
-        this.internalColor = new_color; 
+    public void setInternalColor(Color new_color){ 
+        this.perimetralColorString = new_color.toString();
     }
+    
+    //
+    public abstract Node getNode();
 }

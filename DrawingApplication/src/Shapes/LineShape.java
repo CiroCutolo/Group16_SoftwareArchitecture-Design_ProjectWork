@@ -1,5 +1,8 @@
 package Shapes;
 
+import java.io.Serializable;
+import javafx.scene.Node;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
 /**
@@ -9,7 +12,7 @@ import javafx.scene.shape.Line;
  * 
  * @author ciroc
  */
-public class LineShape extends Shape{
+public class LineShape extends Shape implements Serializable{
     
     /**
      * Costruttore della forma lineare.
@@ -35,10 +38,17 @@ public class LineShape extends Shape{
         Line line = new Line(initialX, initialY, finalX, finalY);
         
         // Applicazione delle proprietà visive
-        line.setStroke(perimetralColor); // colore del bordo
+        line.setStroke(Color.valueOf(perimetralColorString)); // colore del bordo
         
         return line;
         
+    }
+    
+    @Override
+    public Node getNode() {
+        Line line = new Line(initialX, initialY, finalX, finalY);
+        line.setStroke(Color.valueOf(perimetralColorString));
+        return line;
     }
     
 }
