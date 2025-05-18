@@ -50,18 +50,6 @@ public class RectangleShape extends Shape implements Serializable{
         
         return rectangle;
     }
-    
-    @Override
-    public Node getNode() {
-        double x = Math.min(initialX, finalX);
-        double y = Math.min(initialY, finalY);
-        double width = Math.abs(finalX - initialX);
-        double height = Math.abs(finalY - initialY);
 
-        Rectangle rect = new Rectangle(x, y, width, height);
-        rect.setFill(Color.valueOf(internalColorString));
-        rect.setStroke(Color.valueOf(perimetralColorString)); 
-        return rect;
-    }
 
 }

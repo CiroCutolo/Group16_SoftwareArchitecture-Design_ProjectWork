@@ -52,17 +52,5 @@ public class EllipseShape extends Shape implements Serializable{
         return ellipse;
         
     }
-    
-    @Override
-    public Node getNode() {
-        double centerX = (initialX + finalX) / 2;
-        double centerY = (initialY + finalY) / 2;
-        double radiusX = Math.abs(finalX - initialX) / 2;
-        double radiusY = Math.abs(finalY - initialY) / 2;
-
-        Ellipse ellipse = new Ellipse(centerX, centerY, radiusX, radiusY);
-        ellipse.setFill(Color.valueOf(internalColorString));
-        ellipse.setStroke(Color.valueOf(perimetralColorString)); 
-        return ellipse;
-    }
+  
 }
