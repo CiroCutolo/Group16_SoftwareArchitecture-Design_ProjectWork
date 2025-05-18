@@ -44,11 +44,4 @@ public class LineShape extends Shape implements Serializable{
         
     }
     
-    @Override
-    public Node getNode() {
-        Line line = new Line(initialX, initialY, finalX, finalY);
-        line.setStroke(Color.valueOf(perimetralColorString));
-        return line;
-    }
-    
 }

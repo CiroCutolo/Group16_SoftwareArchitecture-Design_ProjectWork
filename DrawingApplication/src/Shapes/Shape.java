@@ -43,6 +43,4 @@ public abstract class Shape implements Serializable{
         this.internalColorString = new_color.toString();
     }
     
-    //
-    public abstract Node getNode();
 }

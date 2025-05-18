@@ -350,7 +350,7 @@ public class FXMLDocumentController implements Initializable {
         drawingPane.getChildren().clear();
 
         for (Shape shape : shapes) {
-            drawingPane.getChildren().add(shape.getNode());
+            drawingPane.getChildren().add(shape.toFXShape());
         }
 
         System.out.println("Interfaccia aggiornata. Numero forme: " + shapes.size());
