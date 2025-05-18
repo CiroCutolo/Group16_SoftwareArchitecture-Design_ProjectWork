@@ -8,6 +8,8 @@ import Shapes.Shape;
 import Shapes.ShapeFactory;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 import javafx.animation.ScaleTransition;
 import javafx.event.ActionEvent;
@@ -42,6 +44,9 @@ public class FXMLDocumentController implements Initializable {
     private Color perimetralColor = Color.BLACK;
     private Color fillingColor = Color.TRANSPARENT;
     private final DropShadow hover = new DropShadow(10, Color.GRAY);
+    private List<Shape> drawShapes = new ArrayList<>(); 
+    private Shape selectedShape = null;
+
     
     @FXML
     private Pane drawingPane;
@@ -62,6 +67,8 @@ public class FXMLDocumentController implements Initializable {
     private double startX, startY;
     private String selectedShapeType = null; 
     private javafx.scene.shape.Shape previewShape = null;
+    @FXML
+    private ToggleGroup radioColorButtonToggleGroup;
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -150,12 +157,6 @@ public class FXMLDocumentController implements Initializable {
     });
         
     }  
-
-    //Todo - L'UI permette di selezionare contemporaneamnte perimeter e fill,
-    //       quindi vanno in conflitto i due. Le diverse opzioni sono:
-    //       1) A livello UI inserire mutua esclusione tra fill e perimeter
-    //       2) Togliere l'else if e gestirla in maniera diversa (magari se ho
-    //          selezionato sia fill che perimeter allora cambio il colore di entrambi)
     
     //Todo - Magari implementare modi per resettare il colore a quello predefinito
     //       (cioè fill trasparente o bianco e perimetro nero). Perchè ora se disattivo
@@ -248,4 +249,45 @@ public class FXMLDocumentController implements Initializable {
         img.setFitWidth(dimension);
         node.setGraphic(img);
     }
+    
+    @FXML
+    private void shapeSelectionHandler(javafx.scene.input.MouseEvent event) {
+        double x = event.getX();
+        double y = event.getY();
+
+        for(int i = drawShapes.size() - 1; i >= 0; i--){
+            Shape shape = drawShapes.get(i);
+            
+            if(shape.toFXShape().contains(x,y)){
+                selectedShape = shape;
+                break;
+            }
+        }
+        
+        visualShapeSelectionHandler(selectedShape);
+    }
+    
+    public void visualShapeSelectionHandler(Shape shape){
+        
+        if(selectedShape != null)
+            deselectShape(selectedShape);
+        
+        selectedShape = shape;
+        
+        if(selectedShape != null)
+            selectShape(selectedShape);
+    }
+    
+    private void selectShape(Shape shape){
+        DropShadow selection = new DropShadow();
+        selection.setColor(Color.SKYBLUE);
+        selection.setWidth(16);
+        selection.setHeight(16);
+        shape.toFXShape().setEffect(selection);
+    }
+    
+    private void deselectShape(Shape shape){
+        shape.toFXShape().setEffect(null);
+    }
+
 }
