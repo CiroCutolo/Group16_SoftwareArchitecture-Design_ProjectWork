@@ -35,12 +35,12 @@ public abstract class Shape implements Serializable{
     
     // Metodo dedito alla modifica del colore perimetrale della forma
     public void setPerimetralColor(Color new_color){
-        this.internalColorString = new_color.toString();
+        this.perimetralColorString = new_color.toString();
     }
     
     // Modifica dedito alla modifica del colore interno alla forma
     public void setInternalColor(Color new_color){ 
-        this.perimetralColorString = new_color.toString();
+        this.internalColorString = new_color.toString();
     }
     
     //
