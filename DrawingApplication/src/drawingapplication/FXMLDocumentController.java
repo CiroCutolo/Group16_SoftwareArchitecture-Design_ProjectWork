@@ -328,19 +328,19 @@ public class FXMLDocumentController implements Initializable {
     private void shapeSelectionHandler(javafx.scene.input.MouseEvent event) {
         double x = event.getX();
         double y = event.getY();
-        selectedShape = null;
+        Shape newSelectedShape = null;
         
         for(int i = drawShapes.size() - 1; i >= 0; i--){
             Shape shape = drawShapes.get(i);
             
             if(shape.toFXShape().contains(x,y)){
                 
-                selectedShape = shape;
+                newSelectedShape = shape;
                 break;
             }
         }
         
-        visualShapeSelectionHandler(selectedShape);
+        visualShapeSelectionHandler(newSelectedShape);
     }
     
     /**
