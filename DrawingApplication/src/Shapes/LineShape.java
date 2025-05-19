@@ -44,6 +44,32 @@ public class LineShape extends Shape implements Serializable{
         
     }
     
-
+    /**
+     * Restituisce il tipo della forma come stringa.
+     *
+     * @return "LINE" come tipo della forma
+     */
+    @Override
+    public String getType(){
+        return "LINE";
+    }
+    
+    /**
+     * Crea e restituisce una copia della linea corrente.
+     * Copia le coordinate e il colore perimetrale, ricreando un nuovo oggetto JavaFX equivalente.
+     *
+     * @return nuova istanza di LineShape con le stesse proprietà dell'originale
+     */
+    @Override
+    public Shape clone() {      
+        LineShape copy = new LineShape(initialX, initialY, finalX, finalY);
+        // Copia i colori logici nella nuova istanza
+        copy.perimetralColorString = this.perimetralColorString;
+        
+        Line copyLine = new Line(initialX, initialY, finalX, finalY);
+        copyLine.setStroke(Color.valueOf(perimetralColorString));
+        copy.setFXShape(copyLine);
+        return copy;
+    }
     
 }

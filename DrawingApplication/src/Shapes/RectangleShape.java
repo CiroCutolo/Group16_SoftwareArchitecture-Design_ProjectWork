@@ -51,5 +51,44 @@ public class RectangleShape extends Shape implements Serializable{
         return rectangle;
     }
 
+    /**
+     * Restituisce il tipo della forma come stringa.
+     *
+     * @return "RECTANGLE" come tipo della forma
+     */
+    @Override
+    public String getType(){
+        return "RECTANGLE";
+    }
 
+    /**
+     * Crea e restituisce una copia della forma rettangolare corrente.
+     * Copia le coordinate, i colori logici e ricrea una nuova istanza JavaFX equivalente.
+     *
+     * @return nuova istanza di RectangleShape con le stesse proprietà dell'originale
+     */
+    @Override
+    public Shape clone() {
+        RectangleShape copy = new RectangleShape(initialX, initialY, finalX, finalY);
+
+        // Copia i colori logici nella nuova istanza
+        copy.perimetralColorString = this.perimetralColorString;
+        copy.internalColorString = this.internalColorString;
+
+        // Crea una nuova shape JavaFX con gli stessi colori
+        Rectangle copyRectangle = new Rectangle(
+            Math.min(initialX, finalX),
+            Math.min(initialY, finalY),
+            Math.abs(finalX - initialX),
+            Math.abs(finalY - initialY)
+        );
+
+        copyRectangle.setStroke(Color.valueOf(perimetralColorString));
+        copyRectangle.setFill(Color.valueOf(internalColorString));
+
+        copy.setFXShape(copyRectangle);
+
+        return copy;
+    }
+    
 }
