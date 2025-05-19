@@ -57,7 +57,6 @@ public class FXMLDocumentController implements Initializable {
     private Color fillingColor = Color.TRANSPARENT;
     private final DropShadow hover = new DropShadow(10, Color.GRAY);
     private List<Shape> drawShapes = new ArrayList<>(); 
-    private List<Shape> shapes = new ArrayList<>();
     private Shape selectedShape = null;
     private ContextMenu shapeMenu;
     private Circle selectedColorButton = null;
@@ -176,7 +175,6 @@ public class FXMLDocumentController implements Initializable {
         finalShape.setFXShape(fxShape);
         drawingPane.getChildren().add(fxShape);
         drawShapes.add(finalShape);
-        shapes.add(finalShape);
         event.consume();
     });
     
@@ -403,13 +401,13 @@ public class FXMLDocumentController implements Initializable {
 
         if (file != null) {
             try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
-             out.writeObject(shapes);
+             out.writeObject(drawShapes);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }
         
-        System.out.println("Forme salvate: " + shapes.size());
+        System.out.println("Forme salvate: " + drawShapes.size());
     }
 
     @FXML
@@ -425,7 +423,7 @@ public class FXMLDocumentController implements Initializable {
             try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
             @SuppressWarnings("unchecked")
             List<Shape> loadedShapes = (List<Shape>) in.readObject();
-            shapes = loadedShapes;
+            drawShapes = loadedShapes;
 
             refreshDrawingPane(); 
             } catch (IOException | ClassNotFoundException ex) {
@@ -437,10 +435,10 @@ public class FXMLDocumentController implements Initializable {
     private void refreshDrawingPane() {
         drawingPane.getChildren().clear();
 
-        for (Shape shape : shapes) {
+        for (Shape shape : drawShapes) {
             drawingPane.getChildren().add(shape.toFXShape());
         }
 
-        System.out.println("Interfaccia aggiornata. Numero forme: " + shapes.size());
+        System.out.println("Interfaccia aggiornata. Numero forme: " + drawShapes.size());
     }
 }
