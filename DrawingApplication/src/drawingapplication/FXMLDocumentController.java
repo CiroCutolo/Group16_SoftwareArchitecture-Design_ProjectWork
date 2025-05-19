@@ -5,6 +5,7 @@
 package drawingapplication;
 
 import Command.Clipboard;
+import Command.CutCommand;
 import Command.PasteCommand;
 import Shapes.Shape;
 import Shapes.ShapeFactory;
@@ -48,18 +49,17 @@ import javafx.scene.shape.Rectangle;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
-
 /**
  *
  * @author genna
  */
 public class FXMLDocumentController implements Initializable {
-    
+
     private Label label;
     private Color perimetralColor = Color.BLACK;
     private Color fillingColor = Color.TRANSPARENT;
     private final DropShadow hover = new DropShadow(10, Color.GRAY);
-    private List<Shape> drawShapes = new ArrayList<>(); 
+    private List<Shape> drawShapes = new ArrayList<>();
     private Shape selectedShape = null;
     private ContextMenu shapeMenu;
     private Circle selectedColorButton = null;
@@ -68,7 +68,7 @@ public class FXMLDocumentController implements Initializable {
     private double lastContextY;
     private ContextMenu canvasMenu;
     private MenuItem pasteMenuItem;
-    
+
     @FXML
     private Pane drawingPane;
     @FXML
@@ -84,9 +84,9 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private ToggleGroup shapeToggleGroup;
     @FXML
-    private ToggleButton lineButton,rectangleButton,ellipseButton;
+    private ToggleButton lineButton, rectangleButton, ellipseButton;
     private double startX, startY;
-    private String selectedShapeType = null; 
+    private String selectedShapeType = null;
     private javafx.scene.shape.Shape previewShape = null;
     @FXML
     private ToggleGroup radioColorButtonToggleGroup;
@@ -94,14 +94,15 @@ public class FXMLDocumentController implements Initializable {
     private Button salvaButton;
     @FXML
     private Button CaricaButton;
-    
-    
+    @FXML
+    private Button cutButton;
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
 
         createShapeMenu();
         createCanvasMenu();
-        
+
         purpleButton.setFill(Color.PURPLE);
         blackButton.setFill(Color.BLACK);
         pinkButton.setFill(Color.PINK);
@@ -111,7 +112,7 @@ public class FXMLDocumentController implements Initializable {
         redButton.setFill(Color.RED);
         whiteButton.setFill(Color.WHITE);
         cyanButton.setFill(Color.CYAN);
-        
+
         purpleButton.setOnMouseClicked(event -> handleColorSelection(Color.PURPLE));
         blackButton.setOnMouseClicked(event -> handleColorSelection(Color.BLACK));
         pinkButton.setOnMouseClicked(event -> handleColorSelection(Color.PINK));
@@ -121,27 +122,30 @@ public class FXMLDocumentController implements Initializable {
         redButton.setOnMouseClicked(event -> handleColorSelection(Color.RED));
         whiteButton.setOnMouseClicked(event -> handleColorSelection(Color.WHITE));
         cyanButton.setOnMouseClicked(event -> handleColorSelection(Color.CYAN));
-        
-        
+
         //Evita che il disegno vada oltre l'area di disegno
         drawingPane.setClip(new Rectangle(drawingPane.getPrefWidth(), drawingPane.getPrefHeight()));
-        
+
         //Imposta tooltip e immagine dei pulsanti delle forme
-        setTooltipAndImage(rectangleButton,"Rectangle","rectangle_icon.png");
-        setTooltipAndImage(ellipseButton,"Ellipse","ellipse_icon.png");
-        setTooltipAndImage(lineButton,"Line","line_icon.png");
-        
+        setTooltipAndImage(rectangleButton, "Rectangle", "rectangle_icon.png");
+        setTooltipAndImage(ellipseButton, "Ellipse", "ellipse_icon.png");
+        setTooltipAndImage(lineButton, "Line", "line_icon.png");
+
         //Quando premo nell'are di disegno prende la posizione iniziale del mouse
         drawingPane.setOnMousePressed(event -> {
-        if (selectedShapeType == null) return;
-        startX = event.getX();
-        startY = event.getY();        
-       
+            if (selectedShapeType == null) {
+                return;
+            }
+            startX = event.getX();
+            startY = event.getY();
+
         });
 
         //Trascinamento mouse
         drawingPane.setOnMouseDragged(event -> {
-            if (selectedShapeType == null) return;
+            if (selectedShapeType == null) {
+                return;
+            }
 
             //Evita che la preview possa andare oltre l'area di disegno
             double endX = Math.max(0, Math.min(event.getX(), drawingPane.getWidth()));
@@ -166,7 +170,9 @@ public class FXMLDocumentController implements Initializable {
 
         // Rilascio del mouse
         drawingPane.setOnMouseReleased(event -> {
-            if (selectedShapeType == null) return;
+            if (selectedShapeType == null) {
+                return;
+            }
 
             //Non permette alla figura di uscire dall'area di disegno
             double endX = Math.max(0, Math.min(event.getX(), drawingPane.getWidth()));
@@ -179,40 +185,38 @@ public class FXMLDocumentController implements Initializable {
             }
 
             //Crea la forma definitiva
-            Shape finalShape = ShapeFactory.createShape(selectedShapeType, startX, startY, endX, endY,perimetralColor,fillingColor);
+            Shape finalShape = ShapeFactory.createShape(selectedShapeType, startX, startY, endX, endY, perimetralColor, fillingColor);
             javafx.scene.shape.Shape fxShape = finalShape.toFXShape();
             finalShape.setFXShape(fxShape);
             drawingPane.getChildren().add(fxShape);
             drawShapes.add(finalShape);
             event.consume();
         });
-    
-    /**
-     * @author ciroc
-     */
-    drawingPane.setOnMouseClicked(event -> {
-        if (event.getButton() == MouseButton.SECONDARY && selectedShape != null) {
-            shapeMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
-        } 
-        else if (event.getButton() == MouseButton.SECONDARY && selectedShape == null){
-            lastContextX = event.getX();
-            lastContextY = event.getY();
-            canvasMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
-        } 
-        else {
-            shapeMenu.hide();
-            canvasMenu.hide();
-            shapeSelectionHandler(event); // Qui ci metti il metodo che hai già
-        }
-    });
-        
-    }  
-    
+
+        /**
+         * @author ciroc
+         */
+        drawingPane.setOnMouseClicked(event -> {
+            if (event.getButton() == MouseButton.SECONDARY && selectedShape != null) {
+                shapeMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
+            } else if (event.getButton() == MouseButton.SECONDARY && selectedShape == null) {
+                lastContextX = event.getX();
+                lastContextY = event.getY();
+                canvasMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
+            } else {
+                shapeMenu.hide();
+                canvasMenu.hide();
+                shapeSelectionHandler(event); // Qui ci metti il metodo che hai già
+            }
+        });
+
+    }
+
     /**
      * @author ciroc
      */
     private void handleColorSelection(Color color) {
-        
+
         if (perimeterRadio.isSelected()) {
             perimetralColor = color;
         } else if (fillRadio.isSelected()) {
@@ -226,11 +230,13 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private void removeHoverEffect(javafx.scene.input.MouseEvent event) {
         Circle circle = (Circle) event.getSource();
-        
-        if (circle == selectedColorButton) return;
-        
-        circle.setEffect(null); 
-        
+
+        if (circle == selectedColorButton) {
+            return;
+        }
+
+        circle.setEffect(null);
+
         ScaleTransition scaling = new ScaleTransition(Duration.millis(150), circle);
         scaling.setToX(1.0);
         scaling.setToY(1.0);
@@ -243,14 +249,16 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private void hoverEffect(javafx.scene.input.MouseEvent event) {
         Circle circle = (Circle) event.getSource();
-        
-        if (circle == selectedColorButton) return;
-        
+
+        if (circle == selectedColorButton) {
+            return;
+        }
+
         DropShadow shadow = new DropShadow();
         shadow.setColor(Color.LIGHTGRAY);
         shadow.setRadius(10);
         circle.setEffect(shadow);
-        
+
         ScaleTransition scaling = new ScaleTransition(Duration.millis(150), circle);
         scaling.setToX(1.1);
         scaling.setToY(1.1);
@@ -263,7 +271,7 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private void clickEffect(javafx.scene.input.MouseEvent event) {
         Circle circle = (Circle) event.getSource();
-        
+
         /*ScaleTransition scaling = new ScaleTransition(Duration.millis(100), circle);
         scaling.setToX(1.4);
         scaling.setToY(1.4);
@@ -278,47 +286,46 @@ public class FXMLDocumentController implements Initializable {
         selection.setColor(Color.BLACK);
         selection.setRadius(10);
         circle.setEffect(selection);
-        */
+         */
         circle.setFill(Color.BLACK);
-        
+
         selectedColorButton = circle;
 
     }
 
-    
     @FXML
     private void selectRectangle(ActionEvent event) {
-        if(rectangleButton.isSelected()){
+        if (rectangleButton.isSelected()) {
             selectedShapeType = "RECTANGLE";
-        } else{
+        } else {
             selectedShapeType = null;
         }
     }
 
     @FXML
     private void selectEllipse(ActionEvent event) {
-        if(ellipseButton.isSelected()){
+        if (ellipseButton.isSelected()) {
             selectedShapeType = "ELLIPSE";
-        } else{
+        } else {
             selectedShapeType = null;
         }
     }
 
     @FXML
     private void selectLine(ActionEvent event) {
-        if(lineButton.isSelected()){
+        if (lineButton.isSelected()) {
             selectedShapeType = "LINE";
-        } else{
+        } else {
             selectedShapeType = null;
         }
     }
-    
-        private void setTooltipAndImage(ToggleButton button, String tooltip, String imageFile){
+
+    private void setTooltipAndImage(ToggleButton button, String tooltip, String imageFile) {
         button.setTooltip(new Tooltip(tooltip));
-        setImage(button,imageFile,22);
+        setImage(button, imageFile, 22);
     }
-    
-    private void setImage(Labeled node,String imageFile,int dimension){
+
+    private void setImage(Labeled node, String imageFile, int dimension) {
         Image imageOk = new Image(getClass().getResourceAsStream("/icons/" + imageFile));
         //Image imageOk = new Image("file:src/icons/" + imageFile);
         ImageView img = new ImageView(imageOk);
@@ -327,7 +334,7 @@ public class FXMLDocumentController implements Initializable {
         img.setFitWidth(dimension);
         node.setGraphic(img);
     }
-    
+
     /**
      * @author ciroc
      */
@@ -336,56 +343,57 @@ public class FXMLDocumentController implements Initializable {
         double x = event.getX();
         double y = event.getY();
         Shape newSelectedShape = null;
-        
-        for(int i = drawShapes.size() - 1; i >= 0; i--){
+
+        for (int i = drawShapes.size() - 1; i >= 0; i--) {
             Shape shape = drawShapes.get(i);
-            
-            if(shape.toFXShape().contains(x,y)){
-                
+
+            if (shape.toFXShape().contains(x, y)) {
+
                 newSelectedShape = shape;
                 break;
             }
         }
-        
+
         visualShapeSelectionHandler(newSelectedShape);
     }
-    
+
     /**
      * @author ciroc
      */
-    public void visualShapeSelectionHandler(Shape shape){
-        
-        if(selectedShape != null)
+    public void visualShapeSelectionHandler(Shape shape) {
+
+        if (selectedShape != null) {
             deselectShape(selectedShape.getFXShape());
-        
+        }
+
         selectedShape = shape;
-        
-        if(selectedShape != null)
+
+        if (selectedShape != null) {
             selectShape(selectedShape.getFXShape());
+        }
     }
-    
+
     /**
      * @author ciroc
      */
-    private void selectShape(javafx.scene.shape.Shape shape){
+    private void selectShape(javafx.scene.shape.Shape shape) {
         DropShadow selection = new DropShadow();
         selection.setColor(Color.BLACK);
         selection.setRadius(15);
         shape.setEffect(selection);
-    }   
-    
+    }
+
     /**
      * @author ciroc
      */
-    private void deselectShape(javafx.scene.shape.Shape shape){
+    private void deselectShape(javafx.scene.shape.Shape shape) {
         shape.setEffect(null);
     }
-    
+
     /**
      * @author ciroc
      */
-    
-    private void createCanvasMenu(){
+    private void createCanvasMenu() {
         canvasMenu = new ContextMenu();
         pasteMenuItem = new MenuItem("Incolla");
         pasteMenuItem.setDisable(true);
@@ -395,13 +403,13 @@ public class FXMLDocumentController implements Initializable {
         canvasMenu.getItems().add(pasteMenuItem);
     }
 
-    
     private void createShapeMenu() {
         shapeMenu = new ContextMenu();
-        
+
         MenuItem deletion = new MenuItem("Elimina");
         MenuItem copy = new MenuItem("Copia");
-        
+        MenuItem cut = new MenuItem("Taglia");
+
         deletion.setOnAction(e -> {
             if (selectedShape != null) {
                 drawingPane.getChildren().remove(selectedShape.getFXShape());
@@ -409,7 +417,7 @@ public class FXMLDocumentController implements Initializable {
                 selectedShape = null;
             }
         });
-        
+
         copy.setOnAction(e -> {
             if (selectedShape != null) {
                 clipboard.setContents(Collections.singletonList(selectedShape));
@@ -417,9 +425,18 @@ public class FXMLDocumentController implements Initializable {
             }
         });
 
-        
+        cut.setOnAction(e -> {
+            if (selectedShape != null) {
+                new CutCommand(Collections.singletonList(selectedShape), clipboard, drawShapes, drawingPane).execute();
+                selectedShape = null;
+                pasteMenuItem.setDisable(false);
+                shapeMenu.hide();
+            }
+        });
+
         shapeMenu.getItems().add(deletion);
         shapeMenu.getItems().add(copy);
+        shapeMenu.getItems().add(cut);
     }
 
     @FXML
@@ -427,18 +444,18 @@ public class FXMLDocumentController implements Initializable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Salva Disegno");
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Disegni serializzati", "*.ser")
+                new FileChooser.ExtensionFilter("Disegni serializzati", "*.ser")
         );
         File file = fileChooser.showSaveDialog(drawingPane.getScene().getWindow());
 
         if (file != null) {
             try (ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream(file))) {
-             out.writeObject(drawShapes);
+                out.writeObject(drawShapes);
             } catch (IOException ex) {
                 ex.printStackTrace();
             }
         }
-        
+
         System.out.println("Forme salvate: " + drawShapes.size());
     }
 
@@ -447,23 +464,23 @@ public class FXMLDocumentController implements Initializable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Carica Disegno");
         fileChooser.getExtensionFilters().add(
-            new FileChooser.ExtensionFilter("Disegni serializzati", "*.ser")
+                new FileChooser.ExtensionFilter("Disegni serializzati", "*.ser")
         );
         File file = fileChooser.showOpenDialog(drawingPane.getScene().getWindow());
 
         if (file != null) {
             try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
-            @SuppressWarnings("unchecked")
-            List<Shape> loadedShapes = (List<Shape>) in.readObject();
-            drawShapes = loadedShapes;
+                @SuppressWarnings("unchecked")
+                List<Shape> loadedShapes = (List<Shape>) in.readObject();
+                drawShapes = loadedShapes;
 
-            refreshDrawingPane(); 
+                refreshDrawingPane();
             } catch (IOException | ClassNotFoundException ex) {
                 ex.printStackTrace();
             }
         }
     }
-    
+
     private void refreshDrawingPane() {
         drawingPane.getChildren().clear();
 
@@ -474,5 +491,14 @@ public class FXMLDocumentController implements Initializable {
         }
 
         System.out.println("Interfaccia aggiornata. Numero forme: " + drawShapes.size());
+    }
+    
+    @FXML
+    private void handleCut(ActionEvent event) {
+        if (selectedShape != null) {
+            new CutCommand(Collections.singletonList(selectedShape), clipboard, drawShapes, drawingPane).execute();
+            selectedShape = null;
+            pasteMenuItem.setDisable(false);
+        }
     }
 }
