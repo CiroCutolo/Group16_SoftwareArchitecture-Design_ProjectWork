@@ -470,9 +470,13 @@ public class FXMLDocumentController implements Initializable {
 
         if (file != null) {
             try (ObjectInputStream in = new ObjectInputStream(new FileInputStream(file))) {
-                @SuppressWarnings("unchecked")
-                List<Shape> loadedShapes = (List<Shape>) in.readObject();
-                drawShapes = loadedShapes;
+            @SuppressWarnings("unchecked")
+            List<Shape> loadedShapes = (List<Shape>) in.readObject();
+            drawShapes = loadedShapes;
+            for (Shape shape : drawShapes) {
+                javafx.scene.shape.Shape fxShape = shape.toFXShape();
+                shape.setFXShape(fxShape);
+            }
 
                 refreshDrawingPane();
             } catch (IOException | ClassNotFoundException ex) {
@@ -485,9 +489,12 @@ public class FXMLDocumentController implements Initializable {
         drawingPane.getChildren().clear();
 
         for (Shape shape : drawShapes) {
-            javafx.scene.shape.Shape fx = shape.toFXShape();
-            shape.setFXShape(fx);
-            drawingPane.getChildren().add(fx);
+            javafx.scene.shape.Shape fxShape = shape.toFXShape();
+            shape.setFXShape(fxShape);
+            
+            fxShape.setOnMouseClicked(e -> shapeSelectionHandler(e));
+            
+            drawingPane.getChildren().add(fxShape);
         }
 
         System.out.println("Interfaccia aggiornata. Numero forme: " + drawShapes.size());
