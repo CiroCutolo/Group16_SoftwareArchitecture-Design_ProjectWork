@@ -1,10 +1,10 @@
 # Drawing Application - Group 16 - AH
 
 ## Group members
-[Ciro Cutolo](https://github.com/CiroCutolo)
-[Gaetanop Frasca](https://github.com/gaetanofrs)
-[Gennaro D'Ambrosio](https://github.com/gennaro03)
-[Alessio Bottiglieri](https://github.com/Box92)
+- [Ciro Cutolo](https://github.com/CiroCutolo)
+- [Gaetano Frasca](https://github.com/gaetanofrs)
+- [Gennaro D'Ambrosio](https://github.com/gennaro03)
+- [Alessio Bottiglieri](https://github.com/Box92)
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
