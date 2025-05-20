@@ -67,9 +67,10 @@ public class FXMLDocumentController implements Initializable {
     private Button salvaButton;
     @FXML
     private Button CaricaButton;
+    /*
     @FXML
     private Button cutButton;
-
+    */
     
     // Handler per la selezione colori
     private final ColorSelectionHandler colorHandler = new ColorSelectionHandler();
@@ -312,7 +313,7 @@ public class FXMLDocumentController implements Initializable {
 
         System.out.println("Interfaccia aggiornata. Numero forme: " + drawShapes.size());
     }
-        
+    /* TO DO   
     @FXML
     private void handleCut(ActionEvent event) {
         Shape selectedShape = selectionHandler.getSelectedShape();
@@ -322,7 +323,7 @@ public class FXMLDocumentController implements Initializable {
             pasteMenuItem.setDisable(false);
         }
     }
-
+    */
     @FXML
     private void salvataggio(javafx.scene.input.MouseEvent event) {
         shapeIOManager.saveShapes(drawShapes, drawingPane.getScene().getWindow());

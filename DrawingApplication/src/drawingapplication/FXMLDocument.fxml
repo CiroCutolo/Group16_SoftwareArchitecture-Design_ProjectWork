@@ -60,6 +60,7 @@
                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                       <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
                     </rowConstraints>
+                    <!-- TO DO
                      <children>
                         <Button fx:id="cutButton" contentDisplay="TOP" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#handleCut" prefHeight="40.0" prefWidth="30.0" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
                            <font>
@@ -89,6 +90,7 @@
                            </font>
                         </Button>
                      </children>
+                    -->
                      <HBox.margin>
                         <Insets left="55.0" right="55.0" />
                      </HBox.margin>
