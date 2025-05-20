@@ -194,49 +194,67 @@ public class FXMLDocumentController implements Initializable {
         });
 
         /**
+         * Metodo per gestire il click del mouse sul riquadro di disegno
+         * 
          * @author ciroc
          */
         drawingPane.setOnMouseClicked(event -> {
             if (event.getButton() == MouseButton.SECONDARY && selectedShape != null) {
-                shapeMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
+                // Alla pressione del tasto destro entro una forma selezionata
+                shapeMenu.show(drawingPane, event.getScreenX(), event.getScreenY()); // Viene mostrato il menu contestuale delle figure
             } else if (event.getButton() == MouseButton.SECONDARY && selectedShape == null) {
+                // Alla pressione del tasto destro al di fuori di una qualsiasi forma
                 lastContextX = event.getX();
                 lastContextY = event.getY();
-                canvasMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
+                canvasMenu.show(drawingPane, event.getScreenX(), event.getScreenY()); // Viene mostrato il menu contestuale generico del riquadro di disegno
             } else {
+                // All'occorrenza di ogni altro click vengono nascosti i menu contestuali
                 shapeMenu.hide();
                 canvasMenu.hide();
-                shapeSelectionHandler(event); // Qui ci metti il metodo che hai già
+                shapeSelectionHandler(event); // Viene invocata la selezione
             }
         });
 
     }
 
     /**
+     * Metodo dedito alla gestione della selezione dei colori di bordo e riempimento
+     * 
+     * @param color colore slezionato per il bordo o per il riempimento
+     * 
      * @author ciroc
      */
     private void handleColorSelection(Color color) {
 
         if (perimeterRadio.isSelected()) {
-            perimetralColor = color;
+            // Alla selezione del radio button dedicato al colore di bordo
+            perimetralColor = color; // Viene aggiornato il colore di bordo
         } else if (fillRadio.isSelected()) {
-            fillingColor = color;
+            // Alla selezione del radio button dedicato al colore di riempimento
+            fillingColor = color; // Viene aggiornato il colore di riempimento
         }
     }
 
     /**
+     * Metodo dedito alla corretta rimozione dell'effetto `hover`, dopo che è stato applicato
+     * 
+     * @param event evento che indica la necessità di rimuovere l'effetto di `hover`
+     * 
      * @author ciroc
      */
     @FXML
     private void removeHoverEffect(javafx.scene.input.MouseEvent event) {
-        Circle circle = (Circle) event.getSource();
+        
+        Circle circle = (Circle) event.getSource(); // Viene salvato il color button sottoposto all'evento scatenante
 
+        // Alla presione di un colore già selezionato non succede nulla
         if (circle == selectedColorButton) {
             return;
         }
 
-        circle.setEffect(null);
+        circle.setEffect(null); // Vengono azzerati gli effetti
 
+        //Viene reimpostato lo scaling ad una taglia normale
         ScaleTransition scaling = new ScaleTransition(Duration.millis(150), circle);
         scaling.setToX(1.0);
         scaling.setToY(1.0);
@@ -244,21 +262,28 @@ public class FXMLDocumentController implements Initializable {
     }
 
     /**
+     * Metodo dedito all'attuazione di un effetto visivo `hover`
+     * 
+     * @param event evento che indica la necessità di azionare l'effetto di `hover`
+     * 
      * @author ciroc
      */
     @FXML
     private void hoverEffect(javafx.scene.input.MouseEvent event) {
-        Circle circle = (Circle) event.getSource();
+        Circle circle = (Circle) event.getSource(); // Viene salvato il color button sottoposto all'evento scatenante
 
+        // Alla pressione di un colore già selezionato non succede nulla
         if (circle == selectedColorButton) {
             return;
         }
 
+        // Viene istanziato l'effetto di ombreggiatura
         DropShadow shadow = new DropShadow();
         shadow.setColor(Color.LIGHTGRAY);
         shadow.setRadius(10);
         circle.setEffect(shadow);
 
+        // Viene istanziato un effetto di scaling
         ScaleTransition scaling = new ScaleTransition(Duration.millis(150), circle);
         scaling.setToX(1.1);
         scaling.setToY(1.1);
@@ -266,6 +291,10 @@ public class FXMLDocumentController implements Initializable {
     }
 
     /**
+     * Metodo dedito all'attuazione dell'effetto visivo di click
+     * 
+     * @param event evento che indica la necessità di azionare l'effetto di click
+     * 
      * @author ciroc
      */
     @FXML
@@ -336,28 +365,39 @@ public class FXMLDocumentController implements Initializable {
     }
 
     /**
+     * Metodo dedito alla gestione della selezione delle forme
+     * 
+     * @param event evento di click sul riquadro di disegno che può scatenare l'azione di selezione
+     * 
      * @author ciroc
      */
     @FXML
     private void shapeSelectionHandler(javafx.scene.input.MouseEvent event) {
+        // Vengono salvate le coordinate del click sul riquadro di disegno
         double x = event.getX();
         double y = event.getY();
+        
         Shape newSelectedShape = null;
 
+        // Viene scorso l'intorno del punto cliccato per verificare se ricade in una forma
         for (int i = drawShapes.size() - 1; i >= 0; i--) {
             Shape shape = drawShapes.get(i);
 
             if (shape.toFXShape().contains(x, y)) {
-
+                // All'occorrenza del click entro la forma viene selezionata la forma stessa
                 newSelectedShape = shape;
                 break;
             }
         }
 
-        visualShapeSelectionHandler(newSelectedShape);
+        visualShapeSelectionHandler(newSelectedShape); // Viene richiamato il metodo che gestisce la componente visiva della selezione
     }
 
     /**
+     * Metodo dedito all'attivazione e disattivazione degli effetti visivi legati alla selezione
+     * 
+     * @param shape forma selezionata a cui applicare o da cui rimuovere l'effetto visivo di selezione
+     * 
      * @author ciroc
      */
     public void visualShapeSelectionHandler(Shape shape) {
@@ -374,6 +414,10 @@ public class FXMLDocumentController implements Initializable {
     }
 
     /**
+     * Metodo dedito all'applicazione degli effetti visivi legati alla selezione
+     * 
+     * @param shape forma su cui azionare effetti visivi per la selezione
+     * 
      * @author ciroc
      */
     private void selectShape(javafx.scene.shape.Shape shape) {
@@ -384,6 +428,10 @@ public class FXMLDocumentController implements Initializable {
     }
 
     /**
+     * Metodo dedito alla rimozione degli effetti visivi legati alla selezione
+     * 
+     * @param shape forma da cui devono essere rimossi gli effetti visivi di selezione
+     * 
      * @author ciroc
      */
     private void deselectShape(javafx.scene.shape.Shape shape) {
@@ -391,6 +439,8 @@ public class FXMLDocumentController implements Initializable {
     }
 
     /**
+     * Metodo dedito alla creazione di un menù contestuale generico per il riquadro di disegno
+     * 
      * @author ciroc
      */
     private void createCanvasMenu() {
