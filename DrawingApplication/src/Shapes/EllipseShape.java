@@ -48,9 +48,49 @@ public class EllipseShape extends Shape implements Serializable{
         // Applicazione delle proprietà visive
         ellipse.setStroke(Color.valueOf(perimetralColorString)); // colore del bordo
         ellipse.setFill(Color.valueOf(internalColorString)); // colore di riempimento
-        
+       
         return ellipse;
         
+    }
+
+    
+    /**
+     * Restituisce il tipo della forma come stringa.
+     *
+     * @return "LINE" come tipo della forma
+     */
+    @Override
+    public String getType(){
+        return "ELLIPSE";
+    }
+    
+    /**
+     * Crea e restituisce una copia della forma rettangolare corrente.
+     * Copia le coordinate, i colori logici e ricrea una nuova istanza JavaFX equivalente.
+     *
+     * @return nuova istanza di EllipseShape con le stesse proprietà dell'originale
+     */
+    @Override
+    public Shape clone() {
+        EllipseShape copy = new EllipseShape(initialX, initialY, finalX, finalY);
+
+        // Copia i colori logici nella nuova istanza
+        copy.perimetralColorString = this.perimetralColorString;
+        copy.internalColorString = this.internalColorString;
+
+        Ellipse copyEllipse = new Ellipse(
+            (initialX + finalX) / 2,
+            (initialY + finalY) / 2,
+            Math.abs(finalX - initialX) / 2,
+            Math.abs(finalY - initialY) / 2
+        );
+
+        copyEllipse.setStroke(Color.valueOf(perimetralColorString));
+        copyEllipse.setFill(Color.valueOf(internalColorString));
+
+        copy.setFXShape(copyEllipse);
+
+        return copy;
     }
 
 }

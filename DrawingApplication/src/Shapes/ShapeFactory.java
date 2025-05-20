@@ -62,7 +62,7 @@ public class ShapeFactory {
         
         // Applica i colori se non nulli
         if (strokeColor != null) shape.setPerimetralColor(strokeColor);
-        if (fillColor != null) shape.setInternalColor(fillColor);
+        if (fillColor != null && !selected_shape.equals("LINE")) shape.setInternalColor(fillColor);
         return shape;
     }
     
