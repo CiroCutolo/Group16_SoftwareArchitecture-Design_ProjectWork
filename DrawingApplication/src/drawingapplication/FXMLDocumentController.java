@@ -5,9 +5,12 @@
 package drawingapplication;
 
 import Command.Clipboard;
+import Command.Command;
 import Command.CutCommand;
+import Command.DeleteCommand;
 import Command.PasteCommand;
 import Handlers.ColorSelectionHandler;
+import Handlers.DrawingStateHistory;
 import Handlers.PreviewHandler;
 import Handlers.ShapeIOManager;
 import Handlers.ShapeSelectionHandler;
@@ -32,6 +35,7 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
@@ -94,6 +98,9 @@ public class FXMLDocumentController implements Initializable {
     private ContextMenu canvasMenu;
     private MenuItem pasteMenuItem;
     private String selectedShapeType = null;
+    private DrawingStateHistory commandHistory = new DrawingStateHistory();
+    @FXML
+    private Button undoButton;
     
     
     @Override
@@ -102,6 +109,10 @@ public class FXMLDocumentController implements Initializable {
         createShapeMenu();
         createCanvasMenu();
 
+        ImageView icon = new ImageView(getClass().getResource("/icons/undo_icon.png").toExternalForm());
+        undoButton.setGraphic(icon);
+        icon.setFitWidth(30);
+        icon.setFitHeight(30);
         colorHandler.init(perimeterRadio, fillRadio);
 
         //Registra i pulsanti per la selezione dei colori
@@ -253,7 +264,9 @@ public class FXMLDocumentController implements Initializable {
         pasteMenuItem = new MenuItem("Incolla");
         pasteMenuItem.setDisable(true);
         pasteMenuItem.setOnAction(e -> {
-            new PasteCommand(clipboard, drawingPane, drawShapes, lastContextX, lastContextY).execute();
+            Command paste = new PasteCommand(clipboard, drawingPane, drawShapes, lastContextX, lastContextY);
+            paste.execute();
+            commandHistory.push(paste);
         });
         canvasMenu.getItems().add(pasteMenuItem);
     }
@@ -268,8 +281,9 @@ public class FXMLDocumentController implements Initializable {
         deletion.setOnAction(e -> {
             Shape selectedShape = selectionHandler.getSelectedShape();
             if (selectedShape != null) {
-                drawingPane.getChildren().remove(selectedShape.getFXShape());
-                drawShapes.remove(selectedShape);
+                Command delete = new DeleteCommand(drawingPane, drawShapes, selectedShape);
+                delete.execute();
+                commandHistory.push(delete);
                 selectionHandler.setSelectedShape(null);
             }
         });
@@ -285,7 +299,9 @@ public class FXMLDocumentController implements Initializable {
         cut.setOnAction(e -> {
             Shape selectedShape = selectionHandler.getSelectedShape();
             if (selectedShape != null) {
-                new CutCommand(Collections.singletonList(selectedShape), clipboard, drawShapes, drawingPane).execute();
+                Command cutC = new CutCommand(Collections.singletonList(selectedShape), clipboard, drawShapes, drawingPane);
+                cutC.execute();
+                commandHistory.push(cutC);
                 selectionHandler.setSelectedShape(null);
                 pasteMenuItem.setDisable(false);
                 shapeMenu.hide();
@@ -346,5 +362,12 @@ public class FXMLDocumentController implements Initializable {
         }
 
         refreshDrawingPane();
+    }
+
+    @FXML
+    private void undoLastCommand(MouseEvent event) {
+        if(!commandHistory.isEmpty()){
+            commandHistory.undo();
+        }
     }
 }

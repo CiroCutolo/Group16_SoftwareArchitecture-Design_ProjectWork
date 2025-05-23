@@ -41,4 +41,9 @@ public class CopyCommand implements Command {
     public void execute() {
         clipboard.setContents(selection);
     }
+    
+    @Override
+    public void undo(){
+        
+    }
 }

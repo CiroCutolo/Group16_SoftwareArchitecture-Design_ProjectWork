@@ -10,6 +10,7 @@ package Command;
  */
 import Shapes.Shape;
 import Shapes.ShapeFactory;
+import java.util.ArrayList;
 import javafx.scene.layout.Pane;
 import java.util.List;
 
@@ -30,6 +31,7 @@ public class PasteCommand implements Command {
     private Clipboard clipboard;
     private Pane drawingPane;
     private final List<Shape> drawShapes;
+    private List<Shape> pastedShapes = new ArrayList<>();
     private final double posX;
     private final double posY;
     
@@ -88,8 +90,18 @@ public class PasteCommand implements Command {
 
                 drawingPane.getChildren().add(fxShape);
                 drawShapes.add(newShape);
+                pastedShapes.add(newShape);
             }
         }
+    }
+    
+    @Override
+    public void undo(){
+        for (Shape shape : pastedShapes) {
+            drawingPane.getChildren().remove(shape.getFXShape());
+            drawShapes.remove(shape);
+        }
+        pastedShapes.clear();
     }
 }
 

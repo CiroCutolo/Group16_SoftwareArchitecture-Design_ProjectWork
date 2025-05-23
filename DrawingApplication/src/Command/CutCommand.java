@@ -24,6 +24,7 @@ public class CutCommand implements Command{
     private Clipboard clipboard;
     private List<Shape> drawShapes;
     private Pane drawingPane;
+    private Shape shapeClone;
     
     /** 
     * Costruttore del comando Cut.
@@ -54,7 +55,17 @@ public class CutCommand implements Command{
         for (Shape shape : selection) {
             drawingPane.getChildren().remove(shape.getFXShape());
             drawShapes.remove(shape);
+            shapeClone = shape;
         }
     }
     
+    @Override
+    public void undo(){
+        if (shapeClone == null) return;
+        
+        javafx.scene.shape.Shape fxShape = shapeClone.toFXShape();
+        shapeClone.setFXShape(fxShape);
+        drawingPane.getChildren().add(fxShape);
+        drawShapes.add(shapeClone);
+    }
 }

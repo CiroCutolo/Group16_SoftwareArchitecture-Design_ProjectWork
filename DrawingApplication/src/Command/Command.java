@@ -21,4 +21,5 @@ public interface Command {
      * Metodo da implementare per eseguire il comando.
      */
     void execute();
+    void undo();
 }
