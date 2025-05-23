@@ -56,6 +56,22 @@ public abstract class Shape implements Serializable,Cloneable{
     public void setInternalColor(Color new_color){ 
         this.internalColorString = new_color.toString();
     }
+    
+    /**
+     * Restituisce il colore del bordo della figura
+     * @return colore del bordo della figura come Color
+     */
+    public Color getPerimetralColor() {
+        return Color.valueOf(perimetralColorString);
+    }
+
+    /**
+     * Restituisce il colore di riempimento della figura
+     * @return colore del riempimento della figura come Color
+     */
+    public Color getInternalColor() {
+        return Color.valueOf(internalColorString);
+    }
 
     /**
      * Restituisce l'oggetto fxShape associato a questa forma.

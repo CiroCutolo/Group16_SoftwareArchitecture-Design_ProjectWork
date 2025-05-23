@@ -4,11 +4,17 @@
  */
 package drawingapplication;
 
+import Command.BringForwardCommand;
+import Command.BringToFrontCommand;
+import Command.ChangeColorCommand;
 import Command.Clipboard;
 import Command.Command;
 import Command.CutCommand;
 import Command.DeleteCommand;
+import Command.InsertShapeCommand;
 import Command.PasteCommand;
+import Command.SendBackwardCommand;
+import Command.SendToBackCommand;
 import Handlers.ColorSelectionHandler;
 import Handlers.DrawingStateHistory;
 import Handlers.PreviewHandler;
@@ -27,6 +33,7 @@ import javafx.fxml.Initializable;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Labeled;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleButton;
@@ -39,6 +46,7 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
 
@@ -101,6 +109,11 @@ public class FXMLDocumentController implements Initializable {
     private DrawingStateHistory commandHistory = new DrawingStateHistory();
     @FXML
     private Button undoButton;
+    MenuItem bringToFront;
+    MenuItem bringForward;
+    MenuItem sendBackward;
+    MenuItem sendToBack;
+
     
     
     @Override
@@ -149,10 +162,9 @@ public class FXMLDocumentController implements Initializable {
                 Shape s = previewHandler.handleMouseReleased(e, selectedShapeType, drawingPane,
                         colorHandler.getPerimetralColor(), colorHandler.getFillingColor());
 
-                javafx.scene.shape.Shape fx = s.toFXShape();
-                s.setFXShape(fx);
-                drawingPane.getChildren().add(fx);
-                drawShapes.add(s);
+                Command insertCmd = new InsertShapeCommand(s, drawShapes, drawingPane);
+                insertCmd.execute();
+                commandHistory.push(insertCmd);
             }
         });
 
@@ -171,6 +183,7 @@ public class FXMLDocumentController implements Initializable {
             // Dopo la selezione, se è tasto destro...
             if (event.getButton() == MouseButton.SECONDARY) {
                 if (selectionHandler.getSelectedShape() != null) {
+                    updateLayerMenuItems();
                     shapeMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
                 } else {
                     lastContextX = event.getX();
@@ -277,6 +290,14 @@ public class FXMLDocumentController implements Initializable {
         MenuItem deletion = new MenuItem("Elimina");
         MenuItem copy = new MenuItem("Copia");
         MenuItem cut = new MenuItem("Taglia");
+        MenuItem changeColor = new MenuItem("Cambia Colore");
+        
+        //Menu per il cambio livello
+        Menu layerMenu = new Menu("Cambia livello");
+        bringToFront = new MenuItem("Porta in primo piano");
+        bringForward = new MenuItem("Porta avanti");
+        sendBackward = new MenuItem("Porta indietro");
+        sendToBack = new MenuItem("Manda in ultimo piano");
 
         deletion.setOnAction(e -> {
             Shape selectedShape = selectionHandler.getSelectedShape();
@@ -308,9 +329,61 @@ public class FXMLDocumentController implements Initializable {
             }
         });
 
+        // Cambia colore alla forma selezionata
+        changeColor.setOnAction(e -> {
+            Shape selectedShape = selectionHandler.getSelectedShape();
+
+            // Colori selezionati nei pannelli colore
+            Color newStroke = colorHandler.getPerimetralColor();
+            Color newFill = colorHandler.getFillingColor();
+
+            // Esegui il comando di cambio colore (supporta anche l'undo)
+            Command changeColorCmd = new ChangeColorCommand(selectedShape, newStroke, newFill);
+            changeColorCmd.execute();
+            commandHistory.push(changeColorCmd);
+        });
+
+        // Assegna le azioni
+        bringToFront.setOnAction(e -> {
+            Shape s = selectionHandler.getSelectedShape();
+            if (s != null){
+                Command allForwardCmd = new BringToFrontCommand(s, drawShapes, drawingPane);
+                allForwardCmd.execute();
+                commandHistory.push(allForwardCmd);
+            }
+        });
+        bringForward.setOnAction(e -> {
+            Shape s = selectionHandler.getSelectedShape();
+            if (s != null){
+                Command oneForwardCmd = new BringForwardCommand(s, drawShapes, drawingPane);
+                oneForwardCmd.execute();
+                commandHistory.push(oneForwardCmd);
+            }
+        });
+        sendBackward.setOnAction(e -> {
+            Shape s = selectionHandler.getSelectedShape();
+            if (s != null){
+                Command oneBackCmd = new SendBackwardCommand(s, drawShapes, drawingPane);
+                oneBackCmd.execute();
+                commandHistory.push(oneBackCmd);
+            }
+        });
+        sendToBack.setOnAction(e -> {
+            Shape s = selectionHandler.getSelectedShape();
+            if (s != null){
+               Command allBackCmd = new SendToBackCommand(s, drawShapes, drawingPane);
+               allBackCmd.execute();
+               commandHistory.push(allBackCmd);
+            }
+        });
+        
         shapeMenu.getItems().add(deletion);
         shapeMenu.getItems().add(copy);
         shapeMenu.getItems().add(cut);
+        shapeMenu.getItems().add(changeColor);
+        
+        layerMenu.getItems().addAll(bringToFront, bringForward, sendBackward, sendToBack);
+        shapeMenu.getItems().add(layerMenu);
     }
     
     
@@ -369,5 +442,18 @@ public class FXMLDocumentController implements Initializable {
         if(!commandHistory.isEmpty()){
             commandHistory.undo();
         }
+    }
+    
+    private void updateLayerMenuItems() {
+        Shape selectedShape = selectionHandler.getSelectedShape();
+
+        int index = drawShapes.indexOf(selectedShape);
+        int maxIndex = drawShapes.size() - 1;
+
+        bringForward.setDisable(index == maxIndex);     // se è già in cima
+        bringToFront.setDisable(index == maxIndex);
+
+        sendBackward.setDisable(index == 0);            // se è già in fondo
+        sendToBack.setDisable(index == 0);
     }
 }
