@@ -11,6 +11,9 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 
 import java.util.List;
+
+import Command.MoveShapeCommand;
+import Handlers.DrawingStateHistory;
 /**
  *
  * @author Sterm
@@ -26,6 +29,13 @@ import java.util.List;
 public class ShapeSelectionHandler {
 
     private Shape selectedShape = null;
+    private double dragAnchorX;
+    private double dragAnchorY;
+    private final DrawingStateHistory history;
+    
+    public ShapeSelectionHandler(DrawingStateHistory history) {
+        this.history = history;
+    }
 
     /**
      * Gestisce la selezione di una forma in base all'interazione con il mouse.
@@ -62,6 +72,7 @@ public class ShapeSelectionHandler {
      */
     public void applyVisualSelection(Shape shape) {
         if (selectedShape != null) {
+            removeDragListeners(selectedShape);
             deselectShape(selectedShape.getFXShape());
         }
 
@@ -69,8 +80,58 @@ public class ShapeSelectionHandler {
 
         if (selectedShape != null) {
             selectShape(selectedShape.getFXShape());
+            addDragListeners(selectedShape);
         }
     }
+    
+    /** Attacca i listener di trascinamento alla shape selezionata */
+    private void addDragListeners(Shape logicalShape) {
+        javafx.scene.shape.Shape fx = logicalShape.getFXShape();
+
+        fx.setOnMousePressed(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                dragAnchorX = e.getSceneX();
+                dragAnchorY = e.getSceneY();
+                // memorizza la posizione di partenza
+                fx.setUserData(new double[]{fx.getTranslateX(), fx.getTranslateY()});
+                e.consume();
+            }
+        });
+
+        fx.setOnMouseDragged(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                double dx = e.getSceneX() - dragAnchorX;
+                double dy = e.getSceneY() - dragAnchorY;
+                logicalShape.moveBy(dx, dy);
+                dragAnchorX = e.getSceneX();
+                dragAnchorY = e.getSceneY();
+                e.consume();
+            }
+        });
+
+        fx.setOnMouseReleased(e -> {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                double[] start = (double[]) fx.getUserData();
+                double dx = fx.getTranslateX() - start[0];
+                double dy = fx.getTranslateY() - start[1];
+                if (dx != 0 || dy != 0) {
+                    // registra nello stack Undo
+                    history.push(new MoveShapeCommand(logicalShape, dx, dy));
+                }
+                e.consume();
+            }
+        });
+    }
+
+
+    /** Rimuove i listener dalla shape (per evitare memory-leak) */
+    private void removeDragListeners(Shape logicalShape) {
+        javafx.scene.shape.Shape fx = logicalShape.getFXShape();
+        fx.setOnMousePressed(null);
+        fx.setOnMouseDragged(null);
+        fx.setOnMouseReleased(null);
+    }
+
 
      /**
      * Metodo dedito all'applicazione degli effetti visivi legati alla selezione
@@ -123,6 +184,7 @@ public class ShapeSelectionHandler {
     */
    public void clearSelection() {
        if (selectedShape != null) {
+           removeDragListeners(selectedShape);
            deselectShape(selectedShape.getFXShape());
            selectedShape = null;
        }

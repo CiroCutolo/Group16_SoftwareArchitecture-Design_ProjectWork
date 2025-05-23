@@ -93,8 +93,9 @@ public class FXMLDocumentController implements Initializable {
     //Handler per preview della forma
     private final PreviewHandler previewHandler = new PreviewHandler();
     
+    private final DrawingStateHistory commandHistory = new DrawingStateHistory();
     //Handler per la selezione della forma
-    private final ShapeSelectionHandler selectionHandler = new ShapeSelectionHandler();
+    private final ShapeSelectionHandler selectionHandler = new ShapeSelectionHandler(commandHistory);
     
     //Clipboard per copiare le forme
     private Clipboard clipboard = new Clipboard();
@@ -106,7 +107,6 @@ public class FXMLDocumentController implements Initializable {
     private ContextMenu canvasMenu;
     private MenuItem pasteMenuItem;
     private String selectedShapeType = null;
-    private DrawingStateHistory commandHistory = new DrawingStateHistory();
     @FXML
     private Button undoButton;
     MenuItem bringToFront;

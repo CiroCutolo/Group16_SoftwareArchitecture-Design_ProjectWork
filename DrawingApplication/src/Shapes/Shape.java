@@ -144,4 +144,25 @@ public abstract class Shape implements Serializable,Cloneable{
      */
     public abstract Shape clone();
     
+    /**
+    * Sposta la forma di una quantità dx, dy sia a livello logico
+    * (coordinate iniziali/finali) sia a livello grafico (nodo JavaFX).
+    *
+    * @param dx spostamento orizzontale
+    * @param dy spostamento verticale
+    */
+    public void moveBy(double dx, double dy) {
+       // aggiorna coordinate logiche
+       this.initialX += dx;
+       this.finalX   += dx;
+       this.initialY += dy;
+       this.finalY   += dy;
+
+       // aggiorna il nodo grafico, se presente
+       if (fxShape != null) {
+           fxShape.setTranslateX(fxShape.getTranslateX() + dx);
+           fxShape.setTranslateY(fxShape.getTranslateY() + dy);
+       }
+    }
+    
 }
