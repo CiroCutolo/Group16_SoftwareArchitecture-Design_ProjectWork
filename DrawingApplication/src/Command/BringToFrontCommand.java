@@ -17,6 +17,7 @@ public class BringToFrontCommand implements Command {
     private final List<Shape> drawShapes;
     private final Pane drawingPane;
     private int oldIndex;
+    private boolean hasExecuted = false;
 
     public BringToFrontCommand(Shape shape, List<Shape> drawShapes, Pane drawingPane) {
         this.shape = shape;
@@ -30,11 +31,14 @@ public class BringToFrontCommand implements Command {
         drawShapes.remove(shape);
         drawShapes.add(shape); // ora è in fondo alla lista (quindi in cima nel rendering)
         redraw();
+        hasExecuted = true;
     }
 
 
     @Override
     public void undo() {
+        if(!hasExecuted) return;
+        
         drawShapes.remove(shape);
         drawShapes.add(oldIndex, shape);
         redraw();

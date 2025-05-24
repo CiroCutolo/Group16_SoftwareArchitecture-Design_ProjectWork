@@ -19,6 +19,7 @@ public class BringForwardCommand implements Command {
     private final List<Shape> drawShapes;
     private final Pane drawingPane;
     private int oldIndex;
+    private boolean hasExecuted = false; 
 
     public BringForwardCommand(Shape shape, List<Shape> drawShapes, Pane drawingPane) {
         this.shape = shape;
@@ -32,11 +33,14 @@ public class BringForwardCommand implements Command {
         if (oldIndex < drawShapes.size() - 1) {
             Collections.swap(drawShapes, oldIndex, oldIndex + 1);
             redraw();
+            hasExecuted = true;
         }
     }
 
     @Override
     public void undo() {
+        if (!hasExecuted) return;
+        
         int currentIndex = drawShapes.indexOf(shape);
         if (currentIndex > 0) {
             Collections.swap(drawShapes, currentIndex, currentIndex - 1);

@@ -18,6 +18,7 @@ public class SendToBackCommand implements Command {
     private final List<Shape> drawShapes;
     private final Pane drawingPane;
     private int oldIndex;
+    private boolean hasExecuted = false;
 
     public SendToBackCommand(Shape shape, List<Shape> drawShapes, Pane drawingPane) {
         this.shape = shape;
@@ -31,11 +32,13 @@ public class SendToBackCommand implements Command {
         drawShapes.remove(shape);
         drawShapes.add(0, shape); // in fondo (primo nel rendering)
         redraw();
+        hasExecuted = true;
     }
 
 
     @Override
     public void undo() {
+        if(!hasExecuted) return;
         drawShapes.remove(shape);
         drawShapes.add(oldIndex, shape);
         redraw();
