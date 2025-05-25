@@ -9,7 +9,8 @@ import java.util.List;
 import javafx.scene.layout.Pane;
 
 /**
- *
+ * Questa classe si occupa di gestire il comando di eleminazione delle forme.
+ * 
  * @author ciroc
  */
 public class DeleteCommand implements Command{
@@ -23,6 +24,10 @@ public class DeleteCommand implements Command{
         this.shapeToDelete = shapeToDelete;
     }
 
+    /**
+     * Override del metodo execute definito nell'interfaccia `Command`,
+     * utile a rimuovere la forma dal riquadro di disegno.
+     */ 
     @Override
     public void execute() {
         if(shapeToDelete != null){
@@ -31,6 +36,10 @@ public class DeleteCommand implements Command{
         }
     }
 
+    /**
+     * Override del metodo undo definito nell'interfaccia `Command`, utile
+     * ad annullare la modifica effettuata dall'execute.
+     */
     @Override
     public void undo() {
         if (shapeToDelete != null) {

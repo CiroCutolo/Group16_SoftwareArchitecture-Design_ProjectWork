@@ -139,20 +139,28 @@ public class FXMLDocumentController implements Initializable {
         createShapeMenu();
         createCanvasMenu();
         
+        // Sezione di controlli per far funzionare bene lo scrolling
         scrollPane.setPannable(true);
         scrollPane.setFitToWidth(false);
         scrollPane.setFitToHeight(false);
-        
         AnchorPane.setBottomAnchor(scrollPane, 0.0);
         AnchorPane.setLeftAnchor(scrollPane, 0.0);
         AnchorPane.setRightAnchor(scrollPane, 0.0);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
-        
+        scrollPane.addEventFilter(MouseEvent.ANY, event -> {
+            if (event.getTarget() == scrollPane) {
+                event.consume();
+            }
+        });
+        scrollPane.setPannable(false);
+
+        // Sezione di controlli per la dimensione del riquadro di disegno
         AnchorPane.setBottomAnchor(drawingPane, 0.0);
         AnchorPane.setLeftAnchor(drawingPane, 0.0);
         AnchorPane.setRightAnchor(drawingPane, 0.0);
         VBox.setVgrow(drawingPane, Priority.ALWAYS);
-        
+
+        // Sezione di metodi utili alla visualizzazione dell'icona del tasto di undo
         ImageView icon = new ImageView(getClass().getResource("/icons/undo_icon.png").toExternalForm());
         undoButton.setGraphic(icon);
         icon.setFitWidth(30);
@@ -328,6 +336,7 @@ public class FXMLDocumentController implements Initializable {
             Command paste = new PasteCommand(clipboard, drawingPane, drawShapes, lastContextX, lastContextY);
             paste.execute();
             commandHistory.push(paste);
+            drawingPaneSizeDynamicUpdate(drawingPane);
         });
         canvasMenu.getItems().add(pasteMenuItem);
     }
@@ -506,7 +515,13 @@ public class FXMLDocumentController implements Initializable {
     }
     
     /**
+     * Questo metodo si occupa di ridimensionare dinamicamente il riquadro 
+     * di disegno, quando vengono inserite forme che vanno oltre i confini spaziali
+     * del riquadro stesso.
+     * 
      * @author ciroc
+     * 
+     * @param drawingPane riquadro di disegno da ridimensionare
      */
     private void drawingPaneSizeDynamicUpdate(Pane drawingPane){
         double maximumX = 0;

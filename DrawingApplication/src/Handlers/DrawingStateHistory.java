@@ -8,17 +8,29 @@ import Command.Command;
 import java.util.Stack;
 
 /**
- *
+ * Questa classe definisce la cronologia di comandi, che rappresentato i vari
+ * stati del disegno.
+ * 
  * @author ciroc
  */
 public class DrawingStateHistory {
     private final Stack<Command> history = new Stack<>();
     
+    /**
+     * Questo metodo serve a inserire nella cronologia di comandi, un nuovo comando 
+     * eseguito.
+     * 
+     * @param command 
+     */
     public void executeCommand(Command command){
         command.execute();
         history.push(command);
     }
     
+    /**
+     * Questo metodo serve a rimuovere dalla cronologia di comandi, l'ultimo comando
+     * inserito, successivamente all'esecuzione della undo.
+     */
     public void undo(){
         if(!history.isEmpty()){
             Command command = history.pop();
