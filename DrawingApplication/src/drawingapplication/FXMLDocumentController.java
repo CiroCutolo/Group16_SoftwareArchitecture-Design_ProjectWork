@@ -492,6 +492,7 @@ public class FXMLDocumentController implements Initializable {
         }
 
         refreshDrawingPane();
+        drawingPaneSizeDynamicUpdate(drawingPane);
     }
 
     @FXML
