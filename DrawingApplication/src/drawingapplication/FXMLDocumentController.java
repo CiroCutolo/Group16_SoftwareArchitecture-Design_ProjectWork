@@ -26,13 +26,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.ResourceBundle;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.Menu;
@@ -118,8 +123,15 @@ public class FXMLDocumentController implements Initializable {
     MenuItem sendToBack;
     @FXML
     private ScrollPane scrollPane;
+    @FXML
+    private ComboBox<String> zoomComboBox;
 
-    
+    private final DoubleProperty zoomProperty = new SimpleDoubleProperty(1.0);
+    @FXML
+    private Group zoomGroup;
+    @FXML
+    private Group contentGroup;
+
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -210,6 +222,24 @@ public class FXMLDocumentController implements Initializable {
                 }
             }
         });
+        
+        zoomComboBox.getItems().addAll(
+            Arrays.asList("100 %", "200 %", "300 %", "400 %")
+        );
+        zoomComboBox.getSelectionModel().select("100 %");
+
+        zoomGroup.scaleXProperty().bind(zoomProperty);
+        zoomGroup.scaleYProperty().bind(zoomProperty);
+        zoomProperty.set(1.0);
+
+        /* Facoltativo: permette panning con drag del mouse */
+        scrollPane.setPannable(false);
+        zoomGroup.scaleXProperty().bind(zoomProperty);
+        zoomGroup.scaleYProperty().bind(zoomProperty);
+        
+        // dimensione di partenza della "tela"
+        drawingPane.setPrefSize(880, 504);
+        drawingPane.setMinSize(880, 504);
     }
 
     
@@ -490,5 +520,26 @@ public class FXMLDocumentController implements Initializable {
         
         drawingPane.setPrefWidth(maximumX + 100);
         drawingPane.setPrefHeight(maximumY + 100);
+    }
+
+    @FXML
+    private void onZoomChanged(ActionEvent event) {
+        String label = zoomComboBox.getSelectionModel().getSelectedItem();
+        if (label == null) return;
+        double scale = parseLabel(label);   // "50 %" -> 0.5
+        setZoom(scale);
+    }
+
+    // ---------- Helpers ----------
+    private double parseLabel(String s) {
+        try {
+            return Double.parseDouble(s.replace("%", "").trim()) / 100.0;
+        } catch (NumberFormatException ex) {
+            return 1.0;
+        }
+    }
+
+    private void setZoom(double scale) {
+        zoomProperty.set(scale);
     }
 }
