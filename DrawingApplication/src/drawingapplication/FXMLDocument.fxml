@@ -22,10 +22,10 @@
 <?import javafx.scene.shape.Circle?>
 <?import javafx.scene.text.Font?>
 
-<AnchorPane id="AnchorPane" fx:id="ShapeTastic" prefHeight="650.0" prefWidth="900.0" style="-fx-background-color: #d9d9d9;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="drawingapplication.FXMLDocumentController">
+
+<VBox style="-fx-background-color: #d9d9d9;" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="drawingapplication.FXMLDocumentController">
    <children>
-      <Pane fx:id="drawingPane" layoutX="10.0" layoutY="137.0" onMouseClicked="#shapeSelectionHandler" prefHeight="504.0" prefWidth="880.0" style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-background-color: #ffffff;" />
-      <HBox id="toolbar" fx:id="toolbar" layoutX="10.0" layoutY="14.0" prefHeight="110.0" prefWidth="880.0" spacing="20.0" style="-fx-background-color: linear-gradient(to bottom, #f9f9f9, #e0e0e0); -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0.5, 0.0, 1.5); -fx-padding: 10; -fx-background-radius: 10;">
+      <HBox id="toolbar" fx:id="toolbar" alignment="CENTER" maxHeight="110.0" maxWidth="880.0" prefHeight="110.0" prefWidth="880.0" spacing="20.0" style="-fx-background-color: linear-gradient(to bottom, #f9f9f9, #e0e0e0); -fx-effect: dropshadow(gaussian, rgba(0,0,0,0.2), 4, 0.5, 0.0, 1.5); -fx-padding: 10; -fx-background-radius: 10; -fx-alignment: CENTER;">
          <padding>
             <Insets top="10.0" />
          </padding>
@@ -72,35 +72,35 @@
                     </rowConstraints>
                     <!-- TO DO
                      <children>
-                        <Button fx:id="cutButton" contentDisplay="TOP" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#handleCut" prefHeight="40.0" prefWidth="30.0" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
-                           <font>
-                              <Font name="FontAwesome Regular" size="12.0" />
-                           </font>
-                           <graphic>
-                              <ImageView fitHeight="24.0" fitWidth="24.0" pickOnBounds="true" preserveRatio="true">
-                                 <image>
-                                    <Image url="@../icons/scissors.png" />
-                                 </image>
-                              </ImageView>
-                           </graphic>
-                        </Button>
-                        <Button contentDisplay="TOP" layoutX="45.0" layoutY="58.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="40.0" prefWidth="30.0" GridPane.halignment="CENTER" GridPane.valignment="CENTER">
-                           <font>
-                              <Font name="FontAwesome Regular" size="12.0" />
-                           </font>
-                        </Button>
-                        <Button contentDisplay="TOP" layoutX="45.0" layoutY="13.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="40.0" prefWidth="30.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.valignment="CENTER">
-                           <font>
-                              <Font name="FontAwesome Regular" size="12.0" />
-                           </font>
-                        </Button>
-                        <Button contentDisplay="TOP" layoutX="145.0" layoutY="13.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="40.0" prefWidth="30.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
-                           <font>
-                              <Font name="FontAwesome Regular" size="12.0" />
-                           </font>
-                        </Button>
-                     </children>
-                    -->
+                              <Button fx:id="cutButton" contentDisplay="TOP" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" onAction="#handleCut" prefHeight="40.0" prefWidth="30.0" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+                                 <font>
+                                    <Font name="FontAwesome Regular" size="12.0" />
+                                 </font>
+                                 <graphic>
+                                    <ImageView fitHeight="24.0" fitWidth="24.0" pickOnBounds="true" preserveRatio="true">
+                                       <image>
+                                          <Image url="@../icons/scissors.png" />
+                                       </image>
+                                    </ImageView>
+                                 </graphic>
+                              </Button>
+                              <Button contentDisplay="TOP" layoutX="45.0" layoutY="58.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="40.0" prefWidth="30.0" GridPane.halignment="CENTER" GridPane.valignment="CENTER">
+                                 <font>
+                                    <Font name="FontAwesome Regular" size="12.0" />
+                                 </font>
+                              </Button>
+                              <Button contentDisplay="TOP" layoutX="45.0" layoutY="13.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="40.0" prefWidth="30.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.valignment="CENTER">
+                                 <font>
+                                    <Font name="FontAwesome Regular" size="12.0" />
+                                 </font>
+                              </Button>
+                              <Button contentDisplay="TOP" layoutX="145.0" layoutY="13.0" maxHeight="-Infinity" maxWidth="-Infinity" minHeight="-Infinity" minWidth="-Infinity" mnemonicParsing="false" prefHeight="40.0" prefWidth="30.0" GridPane.columnIndex="1" GridPane.halignment="CENTER" GridPane.rowIndex="1" GridPane.valignment="CENTER">
+                                 <font>
+                                    <Font name="FontAwesome Regular" size="12.0" />
+                                 </font>
+                              </Button>
+                           </children>
+                          -->
                      <HBox.margin>
                         <Insets left="55.0" right="55.0" />
                      </HBox.margin>
@@ -138,7 +138,8 @@
                         </HBox>
                      </children>
                   </VBox>
-               </children></HBox>
+               </children>
+            </HBox>
             <HBox fx:id="colorToolbarSection" prefHeight="141.0" prefWidth="212.0">
                <children>
                   <VBox prefHeight="200.0" prefWidth="100.0">
@@ -198,6 +199,17 @@
                </children>
             </HBox>
          </children>
+         <VBox.margin>
+            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+         </VBox.margin>
       </HBox>
+      <ScrollPane fx:id="scrollPane" prefViewportHeight="504.0" prefViewportWidth="880.0" style="-fx-background-radius: 10; -fx-border-radius: 10;">
+         <content>
+            <Pane fx:id="drawingPane" layoutX="10.0" layoutY="137.0" onMouseClicked="#shapeSelectionHandler" prefHeight="504.0" prefWidth="880.0" style="-fx-background-radius: 10; -fx-border-radius: 10; -fx-background-color: #ffffff;" />
+         </content>
+         <VBox.margin>
+            <Insets bottom="10.0" left="10.0" right="10.0" />
+         </VBox.margin>
+      </ScrollPane>
    </children>
-</AnchorPane>
+</VBox>

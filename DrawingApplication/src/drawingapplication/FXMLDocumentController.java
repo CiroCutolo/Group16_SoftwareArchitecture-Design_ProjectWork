@@ -30,12 +30,15 @@ import java.util.ResourceBundle;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Bounds;
+import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
@@ -46,6 +49,8 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
@@ -59,8 +64,6 @@ public class FXMLDocumentController implements Initializable {
     //FXML View
     @FXML
     private Pane drawingPane;
-    @FXML
-    private AnchorPane ShapeTastic;
     @FXML
     private HBox toolbar;
     @FXML
@@ -113,6 +116,8 @@ public class FXMLDocumentController implements Initializable {
     MenuItem bringForward;
     MenuItem sendBackward;
     MenuItem sendToBack;
+    @FXML
+    private ScrollPane scrollPane;
 
     
     
@@ -121,7 +126,21 @@ public class FXMLDocumentController implements Initializable {
 
         createShapeMenu();
         createCanvasMenu();
-
+        
+        scrollPane.setPannable(true);
+        scrollPane.setFitToWidth(false);
+        scrollPane.setFitToHeight(false);
+        
+        AnchorPane.setBottomAnchor(scrollPane, 0.0);
+        AnchorPane.setLeftAnchor(scrollPane, 0.0);
+        AnchorPane.setRightAnchor(scrollPane, 0.0);
+        VBox.setVgrow(scrollPane, Priority.ALWAYS);
+        
+        AnchorPane.setBottomAnchor(drawingPane, 0.0);
+        AnchorPane.setLeftAnchor(drawingPane, 0.0);
+        AnchorPane.setRightAnchor(drawingPane, 0.0);
+        VBox.setVgrow(drawingPane, Priority.ALWAYS);
+        
         ImageView icon = new ImageView(getClass().getResource("/icons/undo_icon.png").toExternalForm());
         undoButton.setGraphic(icon);
         icon.setFitWidth(30);
@@ -135,8 +154,6 @@ public class FXMLDocumentController implements Initializable {
         ));
 
         //Evita che la forma vada oltre l'area di disegno
-        drawingPane.setClip(new Rectangle(drawingPane.getPrefWidth(), drawingPane.getPrefHeight()));
-
         //Imposta tooltip e immagine dei pulsanti delle forme
         setTooltipAndImage(rectangleButton, "Rectangle", "rectangle_icon.png");
         setTooltipAndImage(ellipseButton, "Ellipse", "ellipse_icon.png");
@@ -153,6 +170,7 @@ public class FXMLDocumentController implements Initializable {
         drawingPane.setOnMouseDragged(e -> {
             if (selectedShapeType != null) {
                 previewHandler.handleMouseDragged(e, selectedShapeType, drawingPane);
+                drawingPaneSizeDynamicUpdate(drawingPane);
             }
         });
 
@@ -455,5 +473,22 @@ public class FXMLDocumentController implements Initializable {
 
         sendBackward.setDisable(index == 0);            // se è già in fondo
         sendToBack.setDisable(index == 0);
+    }
+    
+    /**
+     * @author ciroc
+     */
+    private void drawingPaneSizeDynamicUpdate(Pane drawingPane){
+        double maximumX = 0;
+        double maximumY = 0;
+        
+        for(Node node : drawingPane.getChildren()){
+            Bounds bounds = node.getBoundsInParent();
+            maximumX = Math.max(maximumX, bounds.getMaxX());
+            maximumY = Math.max(maximumY, bounds.getMaxY());            
+        }
+        
+        drawingPane.setPrefWidth(maximumX + 100);
+        drawingPane.setPrefHeight(maximumY + 100);
     }
 }
