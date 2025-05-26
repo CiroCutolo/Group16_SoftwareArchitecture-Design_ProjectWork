@@ -17,6 +17,7 @@ import Command.SendBackwardCommand;
 import Command.SendToBackCommand;
 import Handlers.ColorSelectionHandler;
 import Handlers.DrawingStateHistory;
+import Handlers.GridHandler;
 import Handlers.PreviewHandler;
 import Handlers.ShapeIOManager;
 import Handlers.ShapeSelectionHandler;
@@ -26,7 +27,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.ResourceBundle;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -57,8 +57,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
-
 
 /**
  *
@@ -90,24 +88,24 @@ public class FXMLDocumentController implements Initializable {
     /*
     @FXML
     private Button cutButton;
-    */
-    
+     */
+
     // Handler per la selezione colori
     private final ColorSelectionHandler colorHandler = new ColorSelectionHandler();
-    
+
     //Handler per il salvataggio e caricamento da file
     private final ShapeIOManager shapeIOManager = new ShapeIOManager();
-    
+
     //Handler per preview della forma
     private final PreviewHandler previewHandler = new PreviewHandler();
-    
+
     private final DrawingStateHistory commandHistory = new DrawingStateHistory();
     //Handler per la selezione della forma
     private final ShapeSelectionHandler selectionHandler = new ShapeSelectionHandler(commandHistory);
-    
+
     //Clipboard per copiare le forme
     private Clipboard clipboard = new Clipboard();
-        
+
     private List<Shape> drawShapes = new ArrayList<>();
     private ContextMenu shapeMenu;
     private double lastContextX;
@@ -131,14 +129,19 @@ public class FXMLDocumentController implements Initializable {
     private Group zoomGroup;
     @FXML
     private Group contentGroup;
+    @FXML
+    private ToggleButton toggleGridButton;
 
+    private GridHandler gridHandler;
+    @FXML
+    private ComboBox<Double> gridSizeComboBox;
     
     @Override
     public void initialize(URL url, ResourceBundle rb) {
 
         createShapeMenu();
         createCanvasMenu();
-        
+
         // Sezione di controlli per far funzionare bene lo scrolling
         scrollPane.setPannable(true);
         scrollPane.setFitToWidth(false);
@@ -169,8 +172,8 @@ public class FXMLDocumentController implements Initializable {
 
         //Registra i pulsanti per la selezione dei colori
         colorHandler.registerColorButtons(Arrays.asList(
-            purpleButton, blackButton, pinkButton, yellowButton,
-            greenButton, blueButton, redButton, whiteButton, cyanButton
+                purpleButton, blackButton, pinkButton, yellowButton,
+                greenButton, blueButton, redButton, whiteButton, cyanButton
         ));
 
         //Evita che la forma vada oltre l'area di disegno
@@ -208,7 +211,7 @@ public class FXMLDocumentController implements Initializable {
 
         /**
          * Metodo per gestire il click del mouse sul riquadro di disegno
-         * 
+         *
          * @author ciroc
          */
         drawingPane.setOnMouseClicked(event -> {
@@ -230,9 +233,9 @@ public class FXMLDocumentController implements Initializable {
                 }
             }
         });
-        
+
         zoomComboBox.getItems().addAll(
-            Arrays.asList("100 %", "200 %", "300 %", "400 %")
+                Arrays.asList("100 %", "200 %", "300 %", "400 %")
         );
         zoomComboBox.getSelectionModel().select("100 %");
 
@@ -244,13 +247,21 @@ public class FXMLDocumentController implements Initializable {
         scrollPane.setPannable(false);
         zoomGroup.scaleXProperty().bind(zoomProperty);
         zoomGroup.scaleYProperty().bind(zoomProperty);
-        
+
         // dimensione di partenza della "tela"
         drawingPane.setPrefSize(880, 504);
         drawingPane.setMinSize(880, 504);
+
+        // Popola la ComboBox con dimensioni di griglia predefinite
+        gridSizeComboBox.getItems().addAll(10.0, 20.0, 50.0, 100.0);
+        gridSizeComboBox.setValue(20.0); // Valore iniziale
+        gridSizeComboBox.setDisable(true); // Disabilitata finché la griglia non è attiva
+
+        // Inizializza la griglia e la aggiunge al pane (inizialmente invisibile)
+        gridHandler = new GridHandler(2000, 2000, gridSizeComboBox.getValue());
+        drawingPane.getChildren().add(0, gridHandler.getGridNode());
     }
 
-    
     @FXML
     private void selectRectangle(ActionEvent event) {
         if (rectangleButton.isSelected()) {
@@ -295,9 +306,10 @@ public class FXMLDocumentController implements Initializable {
 
     /**
      * Metodo dedito alla gestione della selezione delle forme
-     * 
-     * @param event evento di click sul riquadro di disegno che può scatenare l'azione di selezione
-     * 
+     *
+     * @param event evento di click sul riquadro di disegno che può scatenare
+     * l'azione di selezione
+     *
      * @author ciroc
      */
     @FXML
@@ -305,7 +317,7 @@ public class FXMLDocumentController implements Initializable {
         // Vengono salvate le coordinate del click sul riquadro di disegno
         double x = event.getX();
         double y = event.getY();
-        
+
         Shape newSelectedShape = null;
 
         // Viene scorso l'intorno del punto cliccato per verificare se ricade in una forma
@@ -321,11 +333,11 @@ public class FXMLDocumentController implements Initializable {
 
         selectionHandler.applyVisualSelection(newSelectedShape); // Viene richiamato il metodo che gestisce la componente visiva della selezione
     }
-    
 
     /**
-     * Metodo dedito alla creazione di un menù contestuale generico per il riquadro di disegno
-     * 
+     * Metodo dedito alla creazione di un menù contestuale generico per il
+     * riquadro di disegno
+     *
      * @author ciroc
      */
     private void createCanvasMenu() {
@@ -348,7 +360,7 @@ public class FXMLDocumentController implements Initializable {
         MenuItem copy = new MenuItem("Copia");
         MenuItem cut = new MenuItem("Taglia");
         MenuItem changeColor = new MenuItem("Cambia Colore");
-        
+
         //Menu per il cambio livello
         Menu layerMenu = new Menu("Cambia livello");
         bringToFront = new MenuItem("Porta in primo piano");
@@ -403,7 +415,7 @@ public class FXMLDocumentController implements Initializable {
         // Assegna le azioni
         bringToFront.setOnAction(e -> {
             Shape s = selectionHandler.getSelectedShape();
-            if (s != null){
+            if (s != null) {
                 Command allForwardCmd = new BringToFrontCommand(s, drawShapes, drawingPane);
                 allForwardCmd.execute();
                 commandHistory.push(allForwardCmd);
@@ -411,7 +423,7 @@ public class FXMLDocumentController implements Initializable {
         });
         bringForward.setOnAction(e -> {
             Shape s = selectionHandler.getSelectedShape();
-            if (s != null){
+            if (s != null) {
                 Command oneForwardCmd = new BringForwardCommand(s, drawShapes, drawingPane);
                 oneForwardCmd.execute();
                 commandHistory.push(oneForwardCmd);
@@ -419,7 +431,7 @@ public class FXMLDocumentController implements Initializable {
         });
         sendBackward.setOnAction(e -> {
             Shape s = selectionHandler.getSelectedShape();
-            if (s != null){
+            if (s != null) {
                 Command oneBackCmd = new SendBackwardCommand(s, drawShapes, drawingPane);
                 oneBackCmd.execute();
                 commandHistory.push(oneBackCmd);
@@ -427,49 +439,37 @@ public class FXMLDocumentController implements Initializable {
         });
         sendToBack.setOnAction(e -> {
             Shape s = selectionHandler.getSelectedShape();
-            if (s != null){
-               Command allBackCmd = new SendToBackCommand(s, drawShapes, drawingPane);
-               allBackCmd.execute();
-               commandHistory.push(allBackCmd);
+            if (s != null) {
+                Command allBackCmd = new SendToBackCommand(s, drawShapes, drawingPane);
+                allBackCmd.execute();
+                commandHistory.push(allBackCmd);
             }
         });
-        
+
         shapeMenu.getItems().add(deletion);
         shapeMenu.getItems().add(copy);
         shapeMenu.getItems().add(cut);
         shapeMenu.getItems().add(changeColor);
-        
+
         layerMenu.getItems().addAll(bringToFront, bringForward, sendBackward, sendToBack);
         shapeMenu.getItems().add(layerMenu);
     }
-    
-    
-    
+
     private void refreshDrawingPane() {
         drawingPane.getChildren().clear();
 
         for (Shape shape : drawShapes) {
             javafx.scene.shape.Shape fxShape = shape.toFXShape();
             shape.setFXShape(fxShape);
-            
+
             fxShape.setOnMouseClicked(e -> shapeSelectionHandler(e));
-            
+
             drawingPane.getChildren().add(fxShape);
         }
 
         System.out.println("Interfaccia aggiornata. Numero forme: " + drawShapes.size());
     }
-    /* TO DO   
-    @FXML
-    private void handleCut(ActionEvent event) {
-        Shape selectedShape = selectionHandler.getSelectedShape();
-        if (selectedShape != null) {
-            new CutCommand(Collections.singletonList(selectedShape), clipboard, drawShapes, drawingPane).execute();
-            selectionHandler.setSelectedShape(null);
-            pasteMenuItem.setDisable(false);
-        }
-    }
-    */
+
     @FXML
     private void salvataggio(javafx.scene.input.MouseEvent event) {
         shapeIOManager.saveShapes(drawShapes, drawingPane.getScene().getWindow());
@@ -478,12 +478,12 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private void caricamento(javafx.scene.input.MouseEvent event) {
         List<Shape> loadedShapes = shapeIOManager.loadShapes(drawingPane.getScene().getWindow());
-        
+
         if (loadedShapes == null) {
             System.out.println("Caricamento annullato.");
             return; // non fare nulla
         }
-        
+
         drawShapes = loadedShapes;
         // Ricostruisci la view
         for (Shape shape : drawShapes) {
@@ -497,11 +497,11 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void undoLastCommand(MouseEvent event) {
-        if(!commandHistory.isEmpty()){
+        if (!commandHistory.isEmpty()) {
             commandHistory.undo();
         }
     }
-    
+
     private void updateLayerMenuItems() {
         Shape selectedShape = selectionHandler.getSelectedShape();
 
@@ -514,26 +514,26 @@ public class FXMLDocumentController implements Initializable {
         sendBackward.setDisable(index == 0);            // se è già in fondo
         sendToBack.setDisable(index == 0);
     }
-    
+
     /**
-     * Questo metodo si occupa di ridimensionare dinamicamente il riquadro 
-     * di disegno, quando vengono inserite forme che vanno oltre i confini spaziali
+     * Questo metodo si occupa di ridimensionare dinamicamente il riquadro di
+     * disegno, quando vengono inserite forme che vanno oltre i confini spaziali
      * del riquadro stesso.
-     * 
+     *
      * @author ciroc
-     * 
+     *
      * @param drawingPane riquadro di disegno da ridimensionare
      */
-    private void drawingPaneSizeDynamicUpdate(Pane drawingPane){
+    private void drawingPaneSizeDynamicUpdate(Pane drawingPane) {
         double maximumX = 0;
         double maximumY = 0;
-        
-        for(Node node : drawingPane.getChildren()){
+
+        for (Node node : drawingPane.getChildren()) {
             Bounds bounds = node.getBoundsInParent();
             maximumX = Math.max(maximumX, bounds.getMaxX());
-            maximumY = Math.max(maximumY, bounds.getMaxY());            
+            maximumY = Math.max(maximumY, bounds.getMaxY());
         }
-        
+
         drawingPane.setPrefWidth(maximumX + 100);
         drawingPane.setPrefHeight(maximumY + 100);
     }
@@ -541,9 +541,33 @@ public class FXMLDocumentController implements Initializable {
     @FXML
     private void onZoomChanged(ActionEvent event) {
         String label = zoomComboBox.getSelectionModel().getSelectedItem();
-        if (label == null) return;
+        if (label == null) {
+            return;
+        }
         double scale = parseLabel(label);   // "50 %" -> 0.5
         setZoom(scale);
+    }
+
+    /**
+     * Evento collegato al ToggleButton (attiva/disattiva griglia).
+     * Rende visibile o invisibile la griglia e abilita/disabilita la ComboBox.
+     */
+    @FXML
+    private void toggleGrid(ActionEvent event) {
+        // Listener sul toggleGrid
+        gridHandler.toggleVisibility();
+        gridSizeComboBox.setDisable(!gridHandler.isVisible());
+    }
+
+    /**
+     * Evento collegato alla ComboBox (cambia la dimensione della griglia).
+     * Applica la nuova spaziatura solo se la griglia è attualmente visibile.
+     */
+    @FXML
+    private void changeGridSize(ActionEvent event) {
+        if (gridHandler.isVisible()) {
+            gridHandler.setSpacing(gridSizeComboBox.getValue());
+        }
     }
 
     // ---------- Helpers ----------
