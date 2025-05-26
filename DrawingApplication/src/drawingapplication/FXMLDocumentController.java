@@ -55,6 +55,7 @@ import javafx.scene.layout.AnchorPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
@@ -113,6 +114,8 @@ public class FXMLDocumentController implements Initializable {
     private ContextMenu canvasMenu;
     private MenuItem pasteMenuItem;
     private String selectedShapeType = null;
+    private Boolean isPaneSizeChanged = false;
+    
     @FXML
     private Button undoButton;
     MenuItem bringToFront;
@@ -142,22 +145,13 @@ public class FXMLDocumentController implements Initializable {
         createShapeMenu();
         createCanvasMenu();
 
-        // Sezione di controlli per far funzionare bene lo scrolling
-        scrollPane.setPannable(true);
-        scrollPane.setFitToWidth(false);
-        scrollPane.setFitToHeight(false);
+        // Sezione di metodi per far funzionare bene lo scrolling
         AnchorPane.setBottomAnchor(scrollPane, 0.0);
         AnchorPane.setLeftAnchor(scrollPane, 0.0);
         AnchorPane.setRightAnchor(scrollPane, 0.0);
         VBox.setVgrow(scrollPane, Priority.ALWAYS);
-        scrollPane.addEventFilter(MouseEvent.ANY, event -> {
-            if (event.getTarget() == scrollPane) {
-                event.consume();
-            }
-        });
-        scrollPane.setPannable(false);
 
-        // Sezione di controlli per la dimensione del riquadro di disegno
+        // Sezione di metodi per la dimensione del riquadro di disegno
         AnchorPane.setBottomAnchor(drawingPane, 0.0);
         AnchorPane.setLeftAnchor(drawingPane, 0.0);
         AnchorPane.setRightAnchor(drawingPane, 0.0);
@@ -246,11 +240,7 @@ public class FXMLDocumentController implements Initializable {
         /* Facoltativo: permette panning con drag del mouse */
         scrollPane.setPannable(false);
         zoomGroup.scaleXProperty().bind(zoomProperty);
-        zoomGroup.scaleYProperty().bind(zoomProperty);
-
-        // dimensione di partenza della "tela"
-        drawingPane.setPrefSize(880, 504);
-        drawingPane.setMinSize(880, 504);
+        zoomGroup.scaleYProperty().bind(zoomProperty);     
 
         // Popola la ComboBox con dimensioni di griglia predefinite
         gridSizeComboBox.getItems().addAll(10.0, 20.0, 50.0, 100.0);
@@ -258,8 +248,16 @@ public class FXMLDocumentController implements Initializable {
         gridSizeComboBox.setDisable(true); // Disabilitata finché la griglia non è attiva
 
         // Inizializza la griglia e la aggiunge al pane (inizialmente invisibile)
-        gridHandler = new GridHandler(2000, 2000, gridSizeComboBox.getValue());
+        gridHandler = new GridHandler(drawingPane.getPrefWidth(), drawingPane.getPrefHeight(), gridSizeComboBox.getValue());
         drawingPane.getChildren().add(0, gridHandler.getGridNode());
+        
+        // Viene ridimensionata anche la griglia quando viene espanso il riquadro di disegno
+        drawingPane.widthProperty().addListener((obs, oldVal, newVal) -> {
+            gridHandler.resize(newVal.doubleValue(), drawingPane.getHeight());
+        });
+        drawingPane.heightProperty().addListener((obs, oldVal, newVal) -> {
+            gridHandler.resize(drawingPane.getWidth(), newVal.doubleValue());
+        });
     }
 
     @FXML

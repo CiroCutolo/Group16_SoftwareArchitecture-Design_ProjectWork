@@ -23,8 +23,8 @@ import javafx.scene.shape.Line;
 public class GridHandler {
 
     // Dimensioni dell'area su cui disegnare la griglia
-    private final double width;
-    private final double height;
+    private double width;
+    private double height;
 
     // Gruppo che contiene tutte le linee della griglia
     private final Group gridGroup;
@@ -114,5 +114,11 @@ public class GridHandler {
      */
     public Node getGridNode() {
         return gridGroup;
+    }
+    
+    public void resize(double newWidth, double newHeight) {
+        this.width = newWidth;
+        this.height = newHeight;
+        drawGrid();
     }
 }

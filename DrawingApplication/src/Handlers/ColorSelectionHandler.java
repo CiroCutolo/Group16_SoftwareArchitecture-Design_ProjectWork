@@ -150,7 +150,7 @@ public class ColorSelectionHandler {
         if (selectedPaint instanceof Color) {
             Color color = (Color) selectedPaint;
             String hexColor = colorToHexString(color); // Viene rilevato il colore in forma di stringa esadecimale
-            String textColor = isWhite(color) ? "black" : "white"; // Viene effettuato un controllo dedito a mantenere un contrasto sopportabile tra background color e colore del testo
+            String textColor = isColorLight(color) ? "black" : "white"; // Viene effettuato un controllo dedito a mantenere un contrasto sopportabile tra background color e colore del testo
 
             // Viene formattata la stringa di stile in modo da renderla applicabile
             String style = String.format(
@@ -168,16 +168,22 @@ public class ColorSelectionHandler {
     }
 
     /**
-     * Metodo dedito al confronto tra colori per definire il colore del testo rispetto al background
+     * Metodo dedito al confronto tra colori per definire il colore del testo rispetto 
+     * al background per un background troppo luminescente viene utilizzato il testo nero,
+     * il bianco altrimenti.
      * 
-     * @param color colore da confrontare con il bianco
+     * @param color colore di cui si deve determinare la luminescenza
      * 
      * @return boolean valore logico residuo dal confronto tra i colori
      * 
      * @author ciroc 
      */
-    private boolean isWhite(Color color) {
-        return color.equals(Color.WHITE);
+    private boolean isColorLight(Color color) {
+        // Calcolo della luminescenza emanta dal colore
+        double luminance = 0.2126 * color.getRed()
+                         + 0.7152 * color.getGreen()
+                         + 0.0722 * color.getBlue();
+        return luminance > 0.6;
     }
 
     /**
