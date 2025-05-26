@@ -14,6 +14,7 @@ import java.util.List;
 
 import Command.MoveShapeCommand;
 import Handlers.DrawingStateHistory;
+import javafx.geometry.Bounds;
 /**
  *
  * @author Sterm
@@ -59,7 +60,7 @@ public class ShapeSelectionHandler {
                 }
             }
 
-            applyVisualSelection(newSelected);
+            applyVisualSelection(newSelected,drawingPane);
         }
     }
 
@@ -70,7 +71,7 @@ public class ShapeSelectionHandler {
      * 
      * @author ciroc
      */
-    public void applyVisualSelection(Shape shape) {
+    public void applyVisualSelection(Shape shape, Pane drawingPane) {
         if (selectedShape != null) {
             removeDragListeners(selectedShape);
             deselectShape(selectedShape.getFXShape());
@@ -80,12 +81,12 @@ public class ShapeSelectionHandler {
 
         if (selectedShape != null) {
             selectShape(selectedShape.getFXShape());
-            addDragListeners(selectedShape);
+            addDragListeners(selectedShape, drawingPane);
         }
     }
     
     /** Attacca i listener di trascinamento alla shape selezionata */
-    private void addDragListeners(Shape logicalShape) {
+    private void addDragListeners(Shape logicalShape, Pane drawingPane) {
         javafx.scene.shape.Shape fx = logicalShape.getFXShape();
 
         fx.setOnMousePressed(e -> {
@@ -102,9 +103,47 @@ public class ShapeSelectionHandler {
             if (e.getButton() == MouseButton.PRIMARY) {
                 double dx = e.getSceneX() - dragAnchorX;
                 double dy = e.getSceneY() - dragAnchorY;
+                
+                javafx.scene.shape.Shape fxShape = logicalShape.getFXShape();
+                Bounds bounds = fxShape.getBoundsInParent();
+
+                // Calcolo solo i nuovi bounds, senza applicare trasformazioni
+                double newMinX = bounds.getMinX() + dx;
+                double newMinY = bounds.getMinY() + dy;
+
+                // Se il nuovo bordo sinistro sarebbe < 0, annulla solo dx negativo
+                if (newMinX < 0) {
+                    dx -= newMinX; // sposta solo quel che resta dentro
+                }
+
+                // Se il nuovo bordo superiore sarebbe < 0, annulla solo dy negativo
+                if (newMinY < 0) {
+                    dy -= newMinY;
+                }
+
+                
                 logicalShape.moveBy(dx, dy);
                 dragAnchorX = e.getSceneX();
                 dragAnchorY = e.getSceneY();
+                
+                // Controllo espansione canvas mentre sposti
+                //Todo - funzione simile a DynamicUpdate del controller
+                double padding = 100;
+                double newMaxX = bounds.getMaxX() + dx;
+                double newMaxY = bounds.getMaxY() + dy;
+
+                double currentWidth = drawingPane.getWidth();
+                double currentHeight = drawingPane.getHeight();
+
+                if (newMaxX >= currentWidth - padding) {
+                    drawingPane.setPrefWidth(newMaxX + padding);
+                }
+
+                if (newMaxY >= currentHeight - padding) {
+                    drawingPane.setPrefHeight(newMaxY + padding);
+                }
+
+                
                 e.consume();
             }
         });

@@ -214,7 +214,7 @@ public class FXMLDocumentController implements Initializable {
 
             // Gestione selezione
             selectionHandler.handleSelection(event, drawShapes, drawingPane);
-
+            
             // Dopo la selezione, se è tasto destro...
             if (event.getButton() == MouseButton.SECONDARY) {
                 if (selectionHandler.getSelectedShape() != null) {
@@ -329,7 +329,7 @@ public class FXMLDocumentController implements Initializable {
             }
         }
 
-        selectionHandler.applyVisualSelection(newSelectedShape); // Viene richiamato il metodo che gestisce la componente visiva della selezione
+        selectionHandler.applyVisualSelection(newSelectedShape, drawingPane); // Viene richiamato il metodo che gestisce la componente visiva della selezione
     }
 
     /**
@@ -527,13 +527,27 @@ public class FXMLDocumentController implements Initializable {
         double maximumY = 0;
 
         for (Node node : drawingPane.getChildren()) {
+            if (node instanceof Group) continue;
             Bounds bounds = node.getBoundsInParent();
             maximumX = Math.max(maximumX, bounds.getMaxX());
             maximumY = Math.max(maximumY, bounds.getMaxY());
         }
+        
+        double padding = 100;
+        
+        // Aggiunta condizionale: solo se serve aggiornare
+        if (maximumX + padding > drawingPane.getWidth()) {
+            drawingPane.setPrefWidth(maximumX + padding);
+        }
 
-        drawingPane.setPrefWidth(maximumX + 100);
-        drawingPane.setPrefHeight(maximumY + 100);
+        if (maximumY + padding > drawingPane.getHeight()) {
+            drawingPane.setPrefHeight(maximumY + padding);
+        }
+        System.out.println("getWidth: " + drawingPane.getWidth());
+        System.out.println("getPrefWidth: " + drawingPane.getPrefWidth());
+        System.out.println("MaximumX: " + maximumX);
+        System.out.println("MaximumY: " + maximumY);
+        System.out.println(drawingPane.getChildren());
     }
 
     @FXML
