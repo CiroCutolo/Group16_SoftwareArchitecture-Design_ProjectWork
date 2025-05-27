@@ -543,11 +543,7 @@ public class FXMLDocumentController implements Initializable {
         if (maximumY + padding > drawingPane.getHeight()) {
             drawingPane.setPrefHeight(maximumY + padding);
         }
-        System.out.println("getWidth: " + drawingPane.getWidth());
-        System.out.println("getPrefWidth: " + drawingPane.getPrefWidth());
-        System.out.println("MaximumX: " + maximumX);
-        System.out.println("MaximumY: " + maximumY);
-        System.out.println(drawingPane.getChildren());
+        
     }
 
     @FXML

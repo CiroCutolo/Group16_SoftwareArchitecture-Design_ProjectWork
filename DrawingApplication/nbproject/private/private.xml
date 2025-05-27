@@ -4,6 +4,13 @@
     <open-files xmlns="http://www.netbeans.org/ns/projectui-open-files/2">
         <group>
             <file>file:/C:/Users/genna/Documents/GitHub/Group16_SoftwareArchitecture-Design_ProjectWork/DrawingApplication/src/drawingapplication/FXMLDocumentController.java</file>
+            <file>file:/C:/Users/genna/Documents/GitHub/Group16_SoftwareArchitecture-Design_ProjectWork/DrawingApplication/test/Command/CutCommandTest.java</file>
+            <file>file:/C:/Users/genna/Documents/GitHub/Group16_SoftwareArchitecture-Design_ProjectWork/DrawingApplication/test/Command/PasteCommandTest.java</file>
+            <file>file:/C:/Users/genna/Documents/GitHub/Group16_SoftwareArchitecture-Design_ProjectWork/DrawingApplication/test/Command/DeleteCommandTest.java</file>
+            <file>file:/C:/Users/genna/Documents/GitHub/Group16_SoftwareArchitecture-Design_ProjectWork/DrawingApplication/test/Command/InsertShapeCommandTest.java</file>
+            <file>file:/C:/Users/genna/Documents/GitHub/Group16_SoftwareArchitecture-Design_ProjectWork/DrawingApplication/test/Command/MoveShapeCommandTest.java</file>
+            <file>file:/C:/Users/genna/Documents/GitHub/Group16_SoftwareArchitecture-Design_ProjectWork/DrawingApplication/test/Command/ChangeColorCommandTest.java</file>
+            <file>file:/C:/Users/genna/Documents/GitHub/Group16_SoftwareArchitecture-Design_ProjectWork/DrawingApplication/test/Command/CopyCommandTest.java</file>
         </group>
     </open-files>
 </project-private>
