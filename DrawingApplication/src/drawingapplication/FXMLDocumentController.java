@@ -474,6 +474,8 @@ public class FXMLDocumentController implements Initializable {
 
             drawingPane.getChildren().add(fxShape);
         }
+        
+        drawingPaneSizeDynamicUpdate(drawingPane);
 
         System.out.println("Interfaccia aggiornata. Numero forme: " + drawShapes.size());
     }
@@ -648,8 +650,8 @@ public class FXMLDocumentController implements Initializable {
 
                 // Aggiorna la vista per riflettere la nuova forma
                 Node updatedNode = shape.toFXShape(); // può essere utile usarlo per refreshShapeInView
-                refreshDrawingPane();
-
+                refreshDrawingPane();                
+   
                 // Deseleziona la forma dopo l'operazione
                 selectionHandler.setSelectedShape(null);
             }
