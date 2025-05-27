@@ -13,6 +13,7 @@ import Command.CutCommand;
 import Command.DeleteCommand;
 import Command.InsertShapeCommand;
 import Command.PasteCommand;
+import Command.ResizeCommand;
 import Command.SendBackwardCommand;
 import Command.SendToBackCommand;
 import Handlers.ColorSelectionHandler;
@@ -34,16 +35,21 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
+import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Dialog;
+import javafx.scene.control.Label;
 import javafx.scene.control.Labeled;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
@@ -52,10 +58,10 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
@@ -115,7 +121,7 @@ public class FXMLDocumentController implements Initializable {
     private MenuItem pasteMenuItem;
     private String selectedShapeType = null;
     private Boolean isPaneSizeChanged = false;
-    
+
     @FXML
     private Button undoButton;
     MenuItem bringToFront;
@@ -138,7 +144,7 @@ public class FXMLDocumentController implements Initializable {
     private GridHandler gridHandler;
     @FXML
     private ComboBox<Double> gridSizeComboBox;
-    
+
     @Override
     public void initialize(URL url, ResourceBundle rb) {
 
@@ -214,7 +220,7 @@ public class FXMLDocumentController implements Initializable {
 
             // Gestione selezione
             selectionHandler.handleSelection(event, drawShapes, drawingPane);
-            
+
             // Dopo la selezione, se è tasto destro...
             if (event.getButton() == MouseButton.SECONDARY) {
                 if (selectionHandler.getSelectedShape() != null) {
@@ -240,7 +246,7 @@ public class FXMLDocumentController implements Initializable {
         /* Facoltativo: permette panning con drag del mouse */
         scrollPane.setPannable(false);
         zoomGroup.scaleXProperty().bind(zoomProperty);
-        zoomGroup.scaleYProperty().bind(zoomProperty);     
+        zoomGroup.scaleYProperty().bind(zoomProperty);
 
         // Popola la ComboBox con dimensioni di griglia predefinite
         gridSizeComboBox.getItems().addAll(10.0, 20.0, 50.0, 100.0);
@@ -250,7 +256,7 @@ public class FXMLDocumentController implements Initializable {
         // Inizializza la griglia e la aggiunge al pane (inizialmente invisibile)
         gridHandler = new GridHandler(drawingPane.getPrefWidth(), drawingPane.getPrefHeight(), gridSizeComboBox.getValue());
         drawingPane.getChildren().add(0, gridHandler.getGridNode());
-        
+
         // Viene ridimensionata anche la griglia quando viene espanso il riquadro di disegno
         drawingPane.widthProperty().addListener((obs, oldVal, newVal) -> {
             gridHandler.resize(newVal.doubleValue(), drawingPane.getHeight());
@@ -358,6 +364,7 @@ public class FXMLDocumentController implements Initializable {
         MenuItem copy = new MenuItem("Copia");
         MenuItem cut = new MenuItem("Taglia");
         MenuItem changeColor = new MenuItem("Cambia Colore");
+        MenuItem resize = new MenuItem("Ridimensiona");
 
         //Menu per il cambio livello
         Menu layerMenu = new Menu("Cambia livello");
@@ -443,11 +450,14 @@ public class FXMLDocumentController implements Initializable {
                 commandHistory.push(allBackCmd);
             }
         });
+        // Imposta l'azione associata alla voce di menu "Ridimensiona".
+        // Quando selezionata, apre una finestra di dialogo per modificare larghezza e altezza
+        // della forma attualmente selezionata tramite il selectionHandler.
+        resize.setOnAction(e -> showResizeDialog(selectionHandler.getSelectedShape()));
 
-        shapeMenu.getItems().add(deletion);
-        shapeMenu.getItems().add(copy);
-        shapeMenu.getItems().add(cut);
-        shapeMenu.getItems().add(changeColor);
+        // Aggiunge tutte le voci di menu (elimina, copia, taglia, cambia colore, ridimensiona)
+        // al menu contestuale che appare con il tasto destro su una forma.
+        shapeMenu.getItems().addAll(deletion, copy, cut, changeColor, resize);
 
         layerMenu.getItems().addAll(bringToFront, bringForward, sendBackward, sendToBack);
         shapeMenu.getItems().add(layerMenu);
@@ -497,6 +507,7 @@ public class FXMLDocumentController implements Initializable {
     private void undoLastCommand(MouseEvent event) {
         if (!commandHistory.isEmpty()) {
             commandHistory.undo();
+            refreshDrawingPane();
         }
     }
 
@@ -527,14 +538,16 @@ public class FXMLDocumentController implements Initializable {
         double maximumY = 0;
 
         for (Node node : drawingPane.getChildren()) {
-            if (node instanceof Group) continue;
+            if (node instanceof Group) {
+                continue;
+            }
             Bounds bounds = node.getBoundsInParent();
             maximumX = Math.max(maximumX, bounds.getMaxX());
             maximumY = Math.max(maximumY, bounds.getMaxY());
         }
-        
+
         double padding = 100;
-        
+
         // Aggiunta condizionale: solo se serve aggiornare
         if (maximumX + padding > drawingPane.getWidth()) {
             drawingPane.setPrefWidth(maximumX + padding);
@@ -543,7 +556,7 @@ public class FXMLDocumentController implements Initializable {
         if (maximumY + padding > drawingPane.getHeight()) {
             drawingPane.setPrefHeight(maximumY + padding);
         }
-        
+
     }
 
     @FXML
@@ -557,8 +570,8 @@ public class FXMLDocumentController implements Initializable {
     }
 
     /**
-     * Evento collegato al ToggleButton (attiva/disattiva griglia).
-     * Rende visibile o invisibile la griglia e abilita/disabilita la ComboBox.
+     * Evento collegato al ToggleButton (attiva/disattiva griglia). Rende
+     * visibile o invisibile la griglia e abilita/disabilita la ComboBox.
      */
     @FXML
     private void toggleGrid(ActionEvent event) {
@@ -576,6 +589,75 @@ public class FXMLDocumentController implements Initializable {
         if (gridHandler.isVisible()) {
             gridHandler.setSpacing(gridSizeComboBox.getValue());
         }
+    }
+
+    /**
+     * Mostra una finestra di dialogo per il ridimensionamento della forma
+     * selezionata.
+     *
+     * La finestra consente all'utente di visualizzare e modificare le
+     * dimensioni attuali (larghezza e altezza in pixel) della forma. Dopo la
+     * conferma tramite il pulsante "Applica", viene eseguito un
+     * {@link ResizeCommand} per aggiornare le dimensioni della forma e salvare
+     * l'operazione nello storico dei comandi per supportare l'undo. Inoltre,
+     * viene aggiornata la vista per riflettere le nuove dimensioni.
+     *
+     *
+     * @param shape la forma selezionata da ridimensionare; si presuppone che
+     * non sia null
+     */
+    private void showResizeDialog(Shape shape) {
+        // Recupera le dimensioni attuali della forma
+        double oldWidth = shape.getWidth();
+        double oldHeight = shape.getHeight();
+
+        // Campi di testo precompilati con le dimensioni correnti
+        TextField widthField = new TextField(String.valueOf(oldWidth));
+        TextField heightField = new TextField(String.valueOf(oldHeight));
+
+        // Crea il dialogo di tipo JavaFX
+        Dialog<ButtonType> dialog = new Dialog<>();
+        dialog.setTitle("Ridimensiona");
+
+        // Layout del contenuto del dialogo
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        // Inserisce righe con etichette, campi di input e unità "px"
+        grid.addRow(0, new Label("Larghezza:"), widthField, new Label("px"));
+        grid.addRow(1, new Label("Altezza:"), heightField, new Label("px"));
+
+        // Aggiunge il layout al contenuto del dialogo
+        dialog.getDialogPane().setContent(grid);
+
+        // Aggiunge i pulsanti Applica e Annulla
+        dialog.getDialogPane().getButtonTypes().addAll(ButtonType.APPLY, ButtonType.CANCEL);
+
+        // Gestisce il risultato del dialogo al click su "Applica"
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == ButtonType.APPLY) {
+                double newWidth = Double.parseDouble(widthField.getText());
+                double newHeight = Double.parseDouble(heightField.getText());
+
+                // Crea ed esegue il comando di ridimensionamento
+                ResizeCommand resizeCommand = new ResizeCommand(shape, newWidth, newHeight);
+                resizeCommand.execute();
+                commandHistory.push(resizeCommand); // salva nella history per supportare undo
+
+                // Aggiorna la vista per riflettere la nuova forma
+                Node updatedNode = shape.toFXShape(); // può essere utile usarlo per refreshShapeInView
+                refreshDrawingPane();
+
+                // Deseleziona la forma dopo l'operazione
+                selectionHandler.setSelectedShape(null);
+            }
+            return null;
+        });
+
+        // Mostra il dialogo all'utente e attende l'interazione
+        dialog.showAndWait();
     }
 
     // ---------- Helpers ----------
