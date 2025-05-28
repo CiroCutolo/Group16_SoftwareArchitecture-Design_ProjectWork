@@ -17,6 +17,7 @@ import java.util.List;
 import javafx.scene.layout.Pane;
 import java.util.List;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 
 
 
@@ -62,35 +63,29 @@ public class PasteCommand implements Command {
         if (!clipboard.isEmpty()) {
             List<Shape> clones = clipboard.getContents(); // cloni tramite Prototype
             for (Shape shape : clones) {
-                // Calcola dimensioni originali
-                double width = Math.abs(shape.getFinalX()  - shape.getInitialX());
-                double height = Math.abs(shape.getFinalY() - shape.getInitialY());
+            // Calcola dimensioni originali
+            double width = Math.abs(shape.getFinalX() - shape.getInitialX());
+            double height = Math.abs(shape.getFinalY() - shape.getInitialY());
 
-                // Calcola nuove coordinate
-                double newStartX = posX;
-                double newStartY = posY;
-                double newEndX = newStartX + width;
-                double newEndY = newStartY + height;
-                
-                Color fillColor = shape.getType().equals("LINE")
-                    ? Color.TRANSPARENT
-                    : (Color) shape.getFXShape().getFill();
-                // Ricrea la nuova shape
-                Shape newShape = ShapeFactory.createShape(
-                    shape.getType(),
-                    newStartX, newStartY,
-                    newEndX, newEndY,
-                    Color.valueOf(shape.getFXShape().getStroke().toString()),
-                    fillColor
-                    //Color.valueOf(shape.getFXShape().getFill().toString())
-                );
+            // Spostamento per centrare la forma sul punto cliccato
+            double newStartX = posX - width / 2;
+            double newStartY = posY - height / 2;
+            double newEndX = newStartX + width;
+            double newEndY = newStartY + height;
 
-                javafx.scene.shape.Shape fxShape = newShape.toFXShape();
-                newShape.setFXShape(fxShape);
+            // Aggiorna le coordinate nel clone
+            shape.setInitialX(newStartX);
+            shape.setInitialY(newStartY);
+            shape.setFinalX(newEndX);
+            shape.setFinalY(newEndY);
 
-                drawingPane.getChildren().add(fxShape);
-                drawShapes.add(newShape);
-                pastedShapes.add(newShape);
+            // Ricrea il nodo grafico aggiornato
+            javafx.scene.shape.Shape fxShape = shape.toFXShape();
+            shape.setFXShape(fxShape);
+
+            drawingPane.getChildren().add(fxShape);
+            drawShapes.add(shape);
+            pastedShapes.add(shape);
             }
         }
     }

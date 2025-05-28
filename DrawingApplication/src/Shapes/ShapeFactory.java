@@ -27,7 +27,22 @@ public class ShapeFactory {
      * @throws IllegalArgumentException se la forma specificata non è supportata
      */
     public static Shape createShape(String selected_shape, double x1, double y1, double x2, double y2) {
-        return createShape(selected_shape, x1, y1, x2, y2, Color.BLACK, Color.TRANSPARENT);
+        return createShape(selected_shape, x1, y1, x2, y2, Color.BLACK, Color.TRANSPARENT, null);
+    }
+    
+    /**
+     * Metodo senza specificare il testo (nel caso la forma non fosse una stringa)
+     * @param selected_shape Il tipo di forma da creare (LINE, RECTANGLE, ELLIPSE)
+     * @param x1 Coordinata X iniziale
+     * @param y1 Coordinata Y iniziale
+     * @param x2 Coordinata X finale
+     * @param y2 Coordinata Y finale
+     * @param strokeColor Colore del bordo della figura
+     * @param fillColor Colore di riempimento della figura
+     * @return 
+     */
+    public static Shape createShape(String selected_shape, double x1, double y1, double x2, double y2, Color strokeColor, Color fillColor) {
+        return createShape(selected_shape, x1, y1, x2, y2, strokeColor, fillColor, null);
     }
     
     /**
@@ -40,10 +55,11 @@ public class ShapeFactory {
      * @param y2 Coordinata Y finale
      * @param strokeColor Colore del bordo della figura
      * @param fillColor Colore di riempimento della figura
+     * @param textContent testo nel caso la forma fosse una stringa
      * @return Un oggetto di tipo Shape
      * @throws IllegalArgumentException se la forma specificata non è supportata
      */
-    public static Shape createShape(String selected_shape, double x1, double y1, double x2, double y2,Color strokeColor, Color fillColor) {
+    public static Shape createShape(String selected_shape, double x1, double y1, double x2, double y2,Color strokeColor, Color fillColor, String textContent) {
         Shape shape;
         
         switch (selected_shape) {
@@ -55,6 +71,9 @@ public class ShapeFactory {
                 break;
             case "ELLIPSE":
                 shape = new EllipseShape(x1, y1, x2, y2);
+                break;
+            case "TEXT":
+                shape = new TextShape(textContent, x1, y1);
                 break;
             default:
                 throw new IllegalArgumentException("Forma inserita, non supportata: " + selected_shape);

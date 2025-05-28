@@ -23,11 +23,13 @@ import Handlers.PreviewHandler;
 import Handlers.ShapeIOManager;
 import Handlers.ShapeSelectionHandler;
 import Shapes.Shape;
+import Shapes.TextShape;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -38,7 +40,9 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
+import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
@@ -50,6 +54,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
@@ -144,6 +149,8 @@ public class FXMLDocumentController implements Initializable {
     private GridHandler gridHandler;
     @FXML
     private ComboBox<Double> gridSizeComboBox;
+    @FXML
+    private ToggleButton textButton;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -181,17 +188,30 @@ public class FXMLDocumentController implements Initializable {
         setTooltipAndImage(rectangleButton, "Rectangle", "rectangle_icon.png");
         setTooltipAndImage(ellipseButton, "Ellipse", "ellipse_icon.png");
         setTooltipAndImage(lineButton, "Line", "line_icon.png");
-
+        setTooltipAndImage(textButton,"Text","text_icon.png");
         //Pressione del mouse
         drawingPane.setOnMousePressed(e -> {
             if (selectedShapeType != null) {
-                previewHandler.handleMousePressed(e);
+                //Se è una stringa
+                if("TEXT".equals(selectedShapeType)){
+                    Optional<TextShape> result = StringDialog(e);
+                    TextShape s = result.get();
+                    Command insertCmd = new InsertShapeCommand(s, drawShapes, drawingPane);
+                    insertCmd.execute();
+                    commandHistory.push(insertCmd);
+                }
+                
+                //Se è un'altra forma
+                else{
+                    previewHandler.handleMousePressed(e);
+                }
             }
+            
         });
 
         //Trascinamento mouse
         drawingPane.setOnMouseDragged(e -> {
-            if (selectedShapeType != null) {
+            if (selectedShapeType != null && !"TEXT".equals(selectedShapeType)) {
                 previewHandler.handleMouseDragged(e, selectedShapeType, drawingPane);
                 drawingPaneSizeDynamicUpdate(drawingPane);
             }
@@ -199,7 +219,7 @@ public class FXMLDocumentController implements Initializable {
 
         //Rilascio del mouse
         drawingPane.setOnMouseReleased(e -> {
-            if (selectedShapeType != null) {
+            if (selectedShapeType != null && !"TEXT".equals(selectedShapeType)) {
                 Shape s = previewHandler.handleMouseReleased(e, selectedShapeType, drawingPane,
                         colorHandler.getPerimetralColor(), colorHandler.getFillingColor());
 
@@ -289,6 +309,15 @@ public class FXMLDocumentController implements Initializable {
     private void selectLine(ActionEvent event) {
         if (lineButton.isSelected()) {
             selectedShapeType = "LINE";
+        } else {
+            selectedShapeType = null;
+        }
+    }
+    
+    @FXML
+    private void selectText(ActionEvent event) {
+        if (textButton.isSelected()) {
+            selectedShapeType = "TEXT";
         } else {
             selectedShapeType = null;
         }
@@ -654,5 +683,70 @@ public class FXMLDocumentController implements Initializable {
 
     private void setZoom(double scale) {
         zoomProperty.set(scale);
+    }
+    
+    private Optional<TextShape> StringDialog(MouseEvent e){
+        //Dialog per l'inserimento della stringa
+        Dialog<TextShape> dialog = new Dialog<>();
+        dialog.setTitle("Inserisci testo");
+        dialog.setHeaderText("Inserisci il testo e la dimensione del carattere");
+
+        //Pulsanti OK e Annulla
+        ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
+        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
+
+        //Textfield per testo e fontSize
+        TextField textField = new TextField("Testo");
+        TextField fontSizeField = new TextField("20");
+
+        //Layour del dialog
+        GridPane grid = new GridPane();
+        grid.setHgap(10);
+        grid.setVgap(10);
+        grid.setPadding(new Insets(20, 150, 10, 10));
+
+        grid.add(new Label("Testo:"), 0, 0);
+        grid.add(textField, 1, 0);
+        grid.add(new Label("Dimensione carattere:"), 0, 1);
+        grid.add(fontSizeField, 1, 1);
+
+        dialog.getDialogPane().setContent(grid);
+        
+        //Gestione risultato (quindi creazione della stringa)
+        dialog.setResultConverter(dialogButton -> {
+            if (dialogButton == okButtonType) {
+                try {
+                    String content = textField.getText();
+                    double fontSize = Double.parseDouble(fontSizeField.getText());
+                    if (fontSize <= 0 || fontSize > 200) {
+                        showError("La dimensione del font deve essere tra 1 e 200.");
+                    return null;
+                }                               
+
+                TextShape s = new TextShape(content, e.getX(), e.getY());
+                s.setFontSize(fontSize);
+                s.setPerimetralColor(colorHandler.getPerimetralColor());
+                s.setInternalColor(colorHandler.getFillingColor());
+                s.setFXShape(s.toFXShape());
+                return s;
+                } catch (NumberFormatException ex) {
+                    return null;
+                    }
+                }
+            return null;
+        });
+        
+        
+        Optional<TextShape> result = dialog.showAndWait();
+        if (!result.isPresent()) return null;
+        return result;
+    }
+
+    private void showError(String msg) {
+        Alert alert = new Alert(Alert.AlertType.ERROR);
+        alert.setTitle("Errore");
+        alert.setHeaderText(null);
+        alert.setContentText(msg);
+        alert.showAndWait();
     }
 }

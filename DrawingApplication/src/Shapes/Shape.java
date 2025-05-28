@@ -131,6 +131,23 @@ public abstract class Shape implements Serializable, Cloneable {
         return finalY;
     }
 
+    public void setInitialX(double initialX) {
+        this.initialX = initialX;
+    }
+
+    public void setInitialY(double initialY) {
+        this.initialY = initialY;
+    }
+
+    public void setFinalX(double finalX) {
+        this.finalX = finalX;
+    }
+
+    public void setFinalY(double finalY) {
+        this.finalY = finalY;
+    }
+
+    
     /**
      * Metodo astratto per ottenere il tipo della forma (es. "RECTANGLE",
      * "LINE"...). Ogni sottoclasse deve fornire il proprio tipo.
