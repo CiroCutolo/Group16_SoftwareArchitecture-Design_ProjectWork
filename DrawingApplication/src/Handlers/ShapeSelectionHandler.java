@@ -47,21 +47,21 @@ public class ShapeSelectionHandler {
     * @param drawingPane area di disegno in cui si trovano le forme
      */
     public void handleSelection(MouseEvent event, List<Shape> drawShapes, Pane drawingPane) {
-        if (event.getButton() == MouseButton.PRIMARY) {
-            double x = event.getX();
-            double y = event.getY();
-            Shape newSelected = null;
+        
+        double x = event.getSceneX();
+        double y = event.getSceneY();
+        Shape newSelected = null;
 
-            for (int i = drawShapes.size() - 1; i >= 0; i--) {
-                Shape shape = drawShapes.get(i);
-                if (shape.toFXShape().contains(x, y)) {
-                    newSelected = shape;
-                    break;
-                }
+        for (int i = drawShapes.size() - 1; i >= 0; i--) {
+            Shape shape = drawShapes.get(i);
+            javafx.scene.shape.Shape fx = shape.getFXShape();
+            if (fx.contains(fx.sceneToLocal(x,y))) {
+                newSelected = shape;
+                break;
             }
-
-            applyVisualSelection(newSelected,drawingPane);
         }
+
+        applyVisualSelection(newSelected,drawingPane);
     }
 
     /**

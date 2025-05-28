@@ -6,6 +6,8 @@ package Command;
 
 import Shapes.Shape;
 import java.util.List;
+import java.util.stream.Collectors;
+import javafx.scene.Group;
 import javafx.scene.layout.Pane;
 
 /**
@@ -46,9 +48,9 @@ public class BringToFrontCommand implements Command {
 
 
     private void redraw() {
-        drawingPane.getChildren().clear();
-        for (Shape s : drawShapes) {
-            drawingPane.getChildren().add(s.getFXShape());
-        }
+        drawingPane.getChildren().removeIf(node -> !(node instanceof Group));
+        drawingPane.getChildren().addAll(
+            drawShapes.stream().map(Shape::getFXShape).collect(Collectors.toList())
+        );
     }
 }

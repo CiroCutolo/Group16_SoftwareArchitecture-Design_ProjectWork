@@ -219,10 +219,11 @@ public class FXMLDocumentController implements Initializable {
             canvasMenu.hide();
 
             // Gestione selezione
+            if( event.getButton()== MouseButton.PRIMARY){
             selectionHandler.handleSelection(event, drawShapes, drawingPane);
-
+            }
             // Dopo la selezione, se è tasto destro...
-            if (event.getButton() == MouseButton.SECONDARY) {
+            else if (event.getButton() == MouseButton.SECONDARY) {
                 if (selectionHandler.getSelectedShape() != null) {
                     updateLayerMenuItems();
                     shapeMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
@@ -316,27 +317,6 @@ public class FXMLDocumentController implements Initializable {
      *
      * @author ciroc
      */
-    @FXML
-    private void shapeSelectionHandler(javafx.scene.input.MouseEvent event) {
-        // Vengono salvate le coordinate del click sul riquadro di disegno
-        double x = event.getX();
-        double y = event.getY();
-
-        Shape newSelectedShape = null;
-
-        // Viene scorso l'intorno del punto cliccato per verificare se ricade in una forma
-        for (int i = drawShapes.size() - 1; i >= 0; i--) {
-            Shape shape = drawShapes.get(i);
-
-            if (shape.toFXShape().contains(x, y)) {
-                // All'occorrenza del click entro la forma viene selezionata la forma stessa
-                newSelectedShape = shape;
-                break;
-            }
-        }
-
-        selectionHandler.applyVisualSelection(newSelectedShape, drawingPane); // Viene richiamato il metodo che gestisce la componente visiva della selezione
-    }
 
     /**
      * Metodo dedito alla creazione di un menù contestuale generico per il
@@ -464,13 +444,14 @@ public class FXMLDocumentController implements Initializable {
     }
 
     private void refreshDrawingPane() {
-        drawingPane.getChildren().clear();
+        drawingPane.getChildren().removeIf(node -> !(node instanceof Group));
 
         for (Shape shape : drawShapes) {
             javafx.scene.shape.Shape fxShape = shape.toFXShape();
             shape.setFXShape(fxShape);
-
-            fxShape.setOnMouseClicked(e -> shapeSelectionHandler(e));
+            
+            // Non serve??
+            //fxShape.setOnMouseClicked(e -> shapeSelectionHandler(e));
 
             drawingPane.getChildren().add(fxShape);
         }
@@ -648,8 +629,8 @@ public class FXMLDocumentController implements Initializable {
                 resizeCommand.execute();
                 commandHistory.push(resizeCommand); // salva nella history per supportare undo
 
-                // Aggiorna la vista per riflettere la nuova forma
-                Node updatedNode = shape.toFXShape(); // può essere utile usarlo per refreshShapeInView
+                // Aggiorna la vista per riflettere la nuova forma (mai usato)
+                //Node updatedNode = shape.toFXShape(); // può essere utile usarlo per refreshShapeInView
                 refreshDrawingPane();                
    
                 // Deseleziona la forma dopo l'operazione

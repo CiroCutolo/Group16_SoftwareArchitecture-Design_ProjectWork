@@ -7,6 +7,7 @@ package Command;
 import Shapes.Shape;
 import java.util.List;
 import java.util.stream.Collectors;
+import javafx.scene.Group;
 import javafx.scene.layout.Pane;
 
 /**
@@ -46,9 +47,10 @@ public class SendToBackCommand implements Command {
 
 
     private void redraw() {
-        drawingPane.getChildren().setAll(
+        drawingPane.getChildren().removeIf(node -> !(node instanceof Group));
+        drawingPane.getChildren().addAll(
             drawShapes.stream().map(Shape::getFXShape).collect(Collectors.toList())
-    );
-}
+        );
+    }
 }
 
