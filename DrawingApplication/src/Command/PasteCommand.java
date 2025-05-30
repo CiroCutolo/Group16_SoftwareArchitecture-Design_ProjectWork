@@ -10,6 +10,7 @@ package Command;
  */
 import Shapes.Shape;
 import Shapes.ShapeFactory;
+import Shapes.TextShape;
 import java.util.ArrayList;
 import javafx.scene.layout.Pane;
 import java.util.List;
@@ -72,6 +73,15 @@ public class PasteCommand implements Command {
             double newStartY = posY - height / 2;
             double newEndX = newStartX + width;
             double newEndY = newStartY + height;
+            
+            if(newStartY < 0){
+                newStartY -= newStartY - 15;
+                newEndY -= newStartY - 15;
+            }
+            if(newStartX < 0){
+                newStartX -= newStartX - 15;
+                newEndX -= newStartX - 15;
+            }
 
             // Aggiorna le coordinate nel clone
             shape.setInitialX(newStartX);
@@ -83,6 +93,9 @@ public class PasteCommand implements Command {
             javafx.scene.shape.Shape fxShape = shape.toFXShape();
             shape.setFXShape(fxShape);
 
+            if(shape.getType().equals("TEXT")){
+                ((TextShape) shape).checkHeight();
+            }
             drawingPane.getChildren().add(fxShape);
             drawShapes.add(shape);
             pastedShapes.add(shape);

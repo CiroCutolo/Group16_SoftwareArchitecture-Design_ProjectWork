@@ -5,6 +5,7 @@
 package Shapes;
 
 import java.io.Serializable;
+import javafx.scene.control.TextArea;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -26,7 +27,7 @@ public class TextShape extends Shape implements Serializable {
      * @param initialY Coordinata Y di inserimento del testo
      */
     public TextShape(String text, double initialX, double initialY) {
-        super(initialX, initialY, initialX, initialY); // finalX/finalY inutili qui, ma richiesti dalla superclasse
+        super(initialX, initialY, initialX,initialY); // finalX/finalY sono inutili qui, ma richiesti dalla superclasse
         this.textContent = text;
         this.fontSize = 20.0; // default
     }
@@ -112,6 +113,18 @@ public class TextShape extends Shape implements Serializable {
         if (fxShape instanceof Text){
             Text textNode = (Text) fxShape;
             textNode.setFont(Font.font(size));
+        }
+    }
+    
+    public void checkHeight(){
+        double baseline = initialY;
+        double topline = baseline - fxShape.getBaselineOffset();
+        //Sposta in giù se sfora
+        if(topline < 0) {
+            double newBaseline = baseline - topline + 15;
+            setInitialY(newBaseline);
+            Text fxText = (Text) fxShape;
+            fxText.setY(newBaseline);
         }
     }
 }

@@ -69,6 +69,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 
 /**
  *
@@ -200,6 +201,7 @@ public class FXMLDocumentController implements Initializable {
                     Command insertCmd = new InsertShapeCommand(s, drawShapes, drawingPane);
                     insertCmd.execute();
                     commandHistory.push(insertCmd);
+                    
                 }
                 
                 //Se è un'altra forma
@@ -725,12 +727,16 @@ public class FXMLDocumentController implements Initializable {
                         showError("La dimensione del font deve essere tra 1 e 200.");
                     return null;
                 }                               
-
+                
                 TextShape s = new TextShape(content, e.getX(), e.getY());
                 s.setFontSize(fontSize);
                 s.setPerimetralColor(colorHandler.getPerimetralColor());
                 s.setInternalColor(colorHandler.getFillingColor());
                 s.setFXShape(s.toFXShape());
+                
+                //Controlla che la stringa non sfori il top della canvas
+                s.checkHeight();
+                
                 return s;
                 } catch (NumberFormatException ex) {
                     return null;
@@ -740,9 +746,9 @@ public class FXMLDocumentController implements Initializable {
         });
         
         
-        Optional<TextShape> result = dialog.showAndWait();
-        if (!result.isPresent()) return null;
-        return result;
+        
+        
+        return dialog.showAndWait();
     }
 
     private void showError(String msg) {
