@@ -191,6 +191,7 @@ public class FXMLDocumentController implements Initializable {
         setTooltipAndImage(textButton,"Text","text_icon.png");
         //Pressione del mouse
         drawingPane.setOnMousePressed(e -> {
+            selectionHandler.onMousePressed(e, drawingPane);
             if (selectedShapeType != null) {
                 //Se è una stringa
                 if("TEXT".equals(selectedShapeType)){
@@ -211,6 +212,7 @@ public class FXMLDocumentController implements Initializable {
 
         //Trascinamento mouse
         drawingPane.setOnMouseDragged(e -> {
+            selectionHandler.onMouseDragged(e);
             if (selectedShapeType != null && !"TEXT".equals(selectedShapeType)) {
                 previewHandler.handleMouseDragged(e, selectedShapeType, drawingPane);
                 drawingPaneSizeDynamicUpdate(drawingPane);
@@ -219,6 +221,7 @@ public class FXMLDocumentController implements Initializable {
 
         //Rilascio del mouse
         drawingPane.setOnMouseReleased(e -> {
+            selectionHandler.onMouseReleased(e, drawShapes, drawingPane);
             if (selectedShapeType != null && !"TEXT".equals(selectedShapeType)) {
                 Shape s = previewHandler.handleMouseReleased(e, selectedShapeType, drawingPane,
                         colorHandler.getPerimetralColor(), colorHandler.getFillingColor());

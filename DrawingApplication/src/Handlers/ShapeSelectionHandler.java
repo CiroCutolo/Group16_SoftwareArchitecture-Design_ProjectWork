@@ -14,10 +14,13 @@ import java.util.List;
 
 import Command.MoveShapeCommand;
 import Handlers.DrawingStateHistory;
+import java.util.ArrayList;
 import javafx.geometry.Bounds;
+import javafx.scene.paint.Color;
+
 /**
  *
- * @author Sterm
+ * @author Sterm, ciroc
  */
 
 
@@ -29,204 +32,325 @@ import javafx.geometry.Bounds;
  */
 public class ShapeSelectionHandler {
 
+    // SELEZIONE
     private Shape selectedShape = null;
-    private double dragAnchorX;
-    private double dragAnchorY;
+    private final List<Shape> selectedShapes = new ArrayList<>();
+
+    // SELEZIONE MULTIPLA
+    private javafx.scene.shape.Rectangle selectionArea = null;
+    private boolean isDraggingForSelection = false;
+    private double selectionStartingPointX;
+    private double selectionStartingPointY;
+
+    // TRASCINAMENTO 
+    private double draggingPointX;
+    private double draggingPointY;
+
+    // STATO 
     private final DrawingStateHistory history;
-    
+
     public ShapeSelectionHandler(DrawingStateHistory history) {
         this.history = history;
     }
 
+    /*
+    ----------------------------------
+     METODI PUBBLICI: GESTIONE EVENTI
+    ----------------------------------
+    */
     /**
-     * Gestisce la selezione di una forma in base all'interazione con il mouse.
-     * Se il tasto sinistro è premuto, seleziona la forma sotto al cursore (se presente),
-    * applicando l'effetto visivo.
+     * @author ciroc
+     * @param e
+     * @param drawingPane 
+     */
+    public void onMousePressed(MouseEvent e, Pane drawingPane) {
+        if (e.getButton() == MouseButton.PRIMARY) {
+            beginSelectionRectangle(e, drawingPane);
+        }
+    }
+
+    /**
+     * @author ciroc
+     * @param e 
+     */
+    public void onMouseDragged(MouseEvent e) {
+        if (isDraggingForSelection) {
+            updateSelectionArea(e);
+        }
+    }
+
+    /**
+     * @author ciroc
+     * @param e
+     * @param drawShapes
+     * @param drawingPane 
+     */
+    public void onMouseReleased(MouseEvent e, List<Shape> drawShapes, Pane drawingPane) {
+        if (isDraggingForSelection) {
+            finalizeSelectionArea(e, drawShapes, drawingPane);
+        }
+    }
+
+    /**
+    * Gestisce la selezione della forma
     * @param event evento del mouse
     * @param drawShapes lista delle forme attualmente disegnate
     * @param drawingPane area di disegno in cui si trovano le forme
-     */
+    */
     public void handleSelection(MouseEvent event, List<Shape> drawShapes, Pane drawingPane) {
-        
-        double x = event.getSceneX();
-        double y = event.getSceneY();
-        Shape newSelected = null;
+        Shape shape = findShapeSelectedShapePoint(drawShapes, event.getSceneX(), event.getSceneY());
+        applySingleSelection(shape, drawingPane);
+    }
 
-        for (int i = drawShapes.size() - 1; i >= 0; i--) {
-            Shape shape = drawShapes.get(i);
-            javafx.scene.shape.Shape fx = shape.getFXShape();
-            if (fx.contains(fx.sceneToLocal(x,y))) {
-                newSelected = shape;
-                break;
-            }
-        }
+    public Shape getSelectedShape() {
+        return selectedShape;
+    }
 
-        applyVisualSelection(newSelected,drawingPane);
+    public void setSelectedShape(Shape shape) {
+        this.selectedShape = shape;
     }
 
     /**
-     * Metodo dedito all'attivazione e disattivazione degli effetti visivi legati alla selezione
-     * 
-     * @param shape forma selezionata a cui applicare o da cui rimuovere l'effetto visivo di selezione
-     * 
-     * @author ciroc
-     */
-    public void applyVisualSelection(Shape shape, Pane drawingPane) {
+    * Annulla la selezione corrente, rimuovendo eventuali effetti visivi
+    * e mettendo a null il riferimento alla forma selezionata.
+    */
+    public void clearSelection() {
         if (selectedShape != null) {
             removeDragListeners(selectedShape);
             deselectShape(selectedShape.getFXShape());
+            selectedShape = null;
         }
 
-        selectedShape = shape;
+        for (Shape shape : selectedShapes) {
+            deselectShape(shape.getFXShape());
+            removeDragListeners(shape);
+        }
+        selectedShapes.clear();
+    }
 
-        if (selectedShape != null) {
-            selectShape(selectedShape.getFXShape());
-            addDragListeners(selectedShape, drawingPane);
+    /* 
+    ----------------------------------
+        METODI PRIVATI: SELEZIONE
+    ----------------------------------
+    */
+    
+    /**
+     * @author ciroc
+     * 
+     * Applica la selezione singola a una forma, deselezionando tutte le altre.
+     * @param shape la forma da selezionare
+     * @param drawingPane il pannello di disegno
+     */
+    private void applySingleSelection(Shape shape, Pane drawingPane) {
+        clearSelection();
+
+        if (shape != null) {
+            selectedShape = shape;
+            visualShapeSelectionEffect(shape.getFXShape());
+            addDragListeners(shape, drawingPane);
         }
     }
-    
-    /** Attacca i listener di trascinamento alla shape selezionata */
-    private void addDragListeners(Shape logicalShape, Pane drawingPane) {
-        javafx.scene.shape.Shape fx = logicalShape.getFXShape();
 
-        fx.setOnMousePressed(e -> {
+    /**
+     * @author ciroc
+     * 
+     * Trova la prima forma che contiene il punto cliccato per la selezione(sceneX, sceneY).
+     * @param shapes lista delle forme disegnate
+     * @param sceneX coordinata X
+     * @param sceneY coordinata Y
+     * @return la shape trovata o null se nessuna forma è presente nel punto
+     */
+    private Shape findShapeSelectedShapePoint(List<Shape> shapes, double sceneX, double sceneY) {
+        for (int i = shapes.size() - 1; i >= 0; i--) {
+            javafx.scene.shape.Shape fx = shapes.get(i).getFXShape();
+            if (fx.contains(fx.sceneToLocal(sceneX, sceneY))) {
+                return shapes.get(i);
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Applica l'effetto visivo di selezione alla forma selezionata.
+     * @param fxShape la forma a cui applicare l'effetto
+     */
+    private void visualShapeSelectionEffect(javafx.scene.shape.Shape fxShape) {
+        DropShadow selection = new DropShadow();
+        selection.setColor(Color.BLACK);
+        selection.setRadius(15);
+        fxShape.setEffect(selection);
+    }
+
+    /**
+     * Rimuove l'effetto visivo di selezione dalla forma selezionata.
+     * @param fxShape la forma a cui applicare l'effetto
+     */
+    private void deselectShape(javafx.scene.shape.Shape fxShape) {
+        fxShape.setEffect(null);
+    }
+
+    /*
+    ----------------------------------
+    METODI PRIVATI: SELEZIONE MULTIPLA
+    ----------------------------------
+    */
+    
+    /**
+     * Cattura il punto iniziale dell'area di selezione multipla.
+     * @param e evento del mouse
+     * @param drawingPane pannello su cui disegnare l'area di selezione
+     */
+    private void beginSelectionRectangle(MouseEvent e, Pane drawingPane) {
+        selectionStartingPointX = e.getX();
+        selectionStartingPointY = e.getY();
+
+        selectionArea = new javafx.scene.shape.Rectangle();
+        selectionArea.setX(selectionStartingPointX);
+        selectionArea.setY(selectionStartingPointY);
+        selectionArea.setFill(Color.web("blue", 0.2));
+        selectionArea.setStroke(Color.LIGHTGRAY);
+        selectionArea.getStrokeDashArray().addAll(5.0, 5.0);
+        drawingPane.getChildren().add(selectionArea);
+
+        isDraggingForSelection = true;
+        clearSelection();
+    }
+
+    /**
+     * Aggiorna le dimensioni dell'area di selezione in tempo reale, in base alla posizione del mouse.
+     * @param e evento del mouse
+     */
+    private void updateSelectionArea(MouseEvent e) {
+        double currentX = e.getX();
+        double currentY = e.getY();
+        double width = Math.abs(currentX - selectionStartingPointX);
+        double height = Math.abs(currentY - selectionStartingPointY);
+
+        selectionArea.setX(Math.min(currentX, selectionStartingPointX));
+        selectionArea.setY(Math.min(currentY, selectionStartingPointY));
+        selectionArea.setWidth(width);
+        selectionArea.setHeight(height);
+    }
+
+    /**
+     * Serve a selezionare tutte le forme contenute nell'area di selezione,
+     * una volta finalizzata la selezione stessa.
+     * Se il drag è minimo, effettua una selezione singola.
+     * @param e evento del mouse
+     * @param drawShapes lista delle forme disegnate
+     * @param drawingPane pannello di disegno
+     */
+    private void finalizeSelectionArea(MouseEvent e, List<Shape> drawShapes, Pane drawingPane) {
+        double dragDistance = Math.hypot(e.getX() - selectionStartingPointX, e.getY() - selectionStartingPointY);
+
+        if (dragDistance > 5) {
+            Bounds selectionBounds = selectionArea.getBoundsInParent();
+            for (Shape shape : drawShapes) {
+                if (selectionBounds.contains(shape.getFXShape().getBoundsInParent())) {
+                    selectedShapes.add(shape);
+                    visualShapeSelectionEffect(shape.getFXShape());
+                    addDragListeners(shape, drawingPane);
+                }
+            }
+        } else {
+            Shape clickedShape = findShapeSelectedShapePoint(drawShapes, e.getSceneX(), e.getSceneY());
+            applySingleSelection(clickedShape, drawingPane);
+        }
+
+        drawingPane.getChildren().remove(selectionArea);
+        selectionArea = null;
+        isDraggingForSelection = false;
+    }
+
+    /*
+    ----------------------------------
+       METODI PRIVATI: TRASCINAMENTO
+    ----------------------------------
+    */
+    
+    /**
+     * Aggiunge listener per il trascinamento alla forma specificata.
+     * Consente di spostare la forma con il mouse e registra l'operazione nella cronologia.
+     * @param shape la forma da rendere trascinabile
+     * @param drawingPane pannello di disegno
+     */
+    private void addDragListeners(Shape shape, Pane drawingPane) {
+        javafx.scene.shape.Shape fxShape = shape.getFXShape();
+
+        fxShape.setOnMousePressed(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
-                dragAnchorX = e.getSceneX();
-                dragAnchorY = e.getSceneY();
-                // memorizza la posizione di partenza
-                fx.setUserData(new double[]{fx.getTranslateX(), fx.getTranslateY()});
+                draggingPointX = e.getSceneX();
+                draggingPointY = e.getSceneY();
+                fxShape.setUserData(new double[]{fxShape.getTranslateX(), fxShape.getTranslateY()});
                 e.consume();
             }
         });
 
-        fx.setOnMouseDragged(e -> {
+        fxShape.setOnMouseDragged(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
-                double dx = e.getSceneX() - dragAnchorX;
-                double dy = e.getSceneY() - dragAnchorY;
-                
-                javafx.scene.shape.Shape fxShape = logicalShape.getFXShape();
-                Bounds bounds = fxShape.getBoundsInParent();
+                double dx = e.getSceneX() - draggingPointX;
+                double dy = e.getSceneY() - draggingPointY;
 
-                // Calcolo solo i nuovi bounds, senza applicare trasformazioni
+                Bounds bounds = fxShape.getBoundsInParent();
                 double newMinX = bounds.getMinX() + dx;
                 double newMinY = bounds.getMinY() + dy;
 
-                // Se il nuovo bordo sinistro sarebbe < 0, annulla solo dx negativo
-                if (newMinX < 0) {
-                    dx -= newMinX; // sposta solo quel che resta dentro
-                }
+                if (newMinX < 0) dx -= newMinX;
+                if (newMinY < 0) dy -= newMinY;
 
-                // Se il nuovo bordo superiore sarebbe < 0, annulla solo dy negativo
-                if (newMinY < 0) {
-                    dy -= newMinY;
-                }
+                shape.moveBy(dx, dy);
+                draggingPointX = e.getSceneX();
+                draggingPointY = e.getSceneY();
 
-                
-                logicalShape.moveBy(dx, dy);
-                dragAnchorX = e.getSceneX();
-                dragAnchorY = e.getSceneY();
-                
-                // Controllo espansione canvas mentre sposti
-                //Todo - funzione simile a DynamicUpdate del controller
-                double padding = 100;
-                double newMaxX = bounds.getMaxX() + dx;
-                double newMaxY = bounds.getMaxY() + dy;
-
-                double currentWidth = drawingPane.getWidth();
-                double currentHeight = drawingPane.getHeight();
-
-                if (newMaxX >= currentWidth - padding) {
-                    drawingPane.setPrefWidth(newMaxX + padding);
-                }
-
-                if (newMaxY >= currentHeight - padding) {
-                    drawingPane.setPrefHeight(newMaxY + padding);
-                }
-
-                
+                expandCanvasIfNeeded(bounds, dx, dy, drawingPane);
                 e.consume();
             }
         });
 
-        fx.setOnMouseReleased(e -> {
+        fxShape.setOnMouseReleased(e -> {
             if (e.getButton() == MouseButton.PRIMARY) {
-                double[] start = (double[]) fx.getUserData();
-                double dx = fx.getTranslateX() - start[0];
-                double dy = fx.getTranslateY() - start[1];
+                double[] start = (double[]) fxShape.getUserData();
+                double dx = fxShape.getTranslateX() - start[0];
+                double dy = fxShape.getTranslateY() - start[1];
                 if (dx != 0 || dy != 0) {
-                    // registra nello stack Undo
-                    history.push(new MoveShapeCommand(logicalShape, dx, dy));
+                    history.push(new MoveShapeCommand(shape, dx, dy));
                 }
                 e.consume();
             }
         });
     }
 
-
-    /** Rimuove i listener dalla shape (per evitare memory-leak) */
-    private void removeDragListeners(Shape logicalShape) {
-        javafx.scene.shape.Shape fx = logicalShape.getFXShape();
+    /**
+     * Rimuove tutti i listener utili al trascinamento della forma.
+     * @param shape la forma da disassociare
+     */
+    private void removeDragListeners(Shape shape) {
+        javafx.scene.shape.Shape fx = shape.getFXShape();
         fx.setOnMousePressed(null);
         fx.setOnMouseDragged(null);
         fx.setOnMouseReleased(null);
     }
 
-
-     /**
-     * Metodo dedito all'applicazione degli effetti visivi legati alla selezione
-     * 
-     * @param shape forma su cui azionare effetti visivi per la selezione
-     * 
-     * @author ciroc
-     */
-    private void selectShape(javafx.scene.shape.Shape shape) {
-        DropShadow selection = new DropShadow();
-        selection.setColor(javafx.scene.paint.Color.BLACK);
-        selection.setRadius(15);
-        shape.setEffect(selection);
-    }
-
     /**
-     * Metodo dedito alla rimozione degli effetti visivi legati alla selezione
+     * Espande il riquadro, automaticamente, se la forma trascinata supera i limiti
+     * imposti dai bordi visibili.
      * 
-     * @param shape forma da cui devono essere rimossi gli effetti visivi di selezione
-     * 
-     * @author ciroc
+     * @param bounds i limiti della forma
+     * @param dx spostamento in X
+     * @param dy spostamento in Y
+     * @param drawingPane pannello di disegno
      */
-    private void deselectShape(javafx.scene.shape.Shape shape) {
-        shape.setEffect(null);
+    private void expandCanvasIfNeeded(Bounds bounds, double dx, double dy, Pane drawingPane) {
+        double padding = 100;
+        double newMaxX = bounds.getMaxX() + dx;
+        double newMaxY = bounds.getMaxY() + dy;
+
+        if (newMaxX >= drawingPane.getWidth() - padding) {
+            drawingPane.setPrefWidth(newMaxX + padding);
+        }
+        if (newMaxY >= drawingPane.getHeight() - padding) {
+            drawingPane.setPrefHeight(newMaxY + padding);
+        }
     }
-
-    
-    /**
-    * Restituisce la forma attualmente selezionata.
-    *
-    * @return la forma selezionata, oppure null se nessuna è selezionata
-    */
-   public Shape getSelectedShape() {
-       return selectedShape;
-   }
-
-   /**
-    * Imposta manualmente la forma selezionata.
-    * Non applica effetti visivi ma solo aggiornamento logico.
-    *
-    * @param selectedShape la forma da considerare come selezionata
-    */
-   public void setSelectedShape(Shape selectedShape) {
-       this.selectedShape = selectedShape;
-   }
-
-   /**
-    * Annulla la selezione corrente, rimuovendo eventuali effetti visivi
-    * e mettendo a null il riferimento alla forma selezionata.
-    */
-   public void clearSelection() {
-       if (selectedShape != null) {
-           removeDragListeners(selectedShape);
-           deselectShape(selectedShape.getFXShape());
-           selectedShape = null;
-       }
-   }
-
 }
+
