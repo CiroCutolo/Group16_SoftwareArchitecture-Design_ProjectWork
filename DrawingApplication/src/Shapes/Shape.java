@@ -228,4 +228,21 @@ public abstract class Shape implements Serializable, Cloneable {
         this.finalX = this.initialX + newWidth;
         this.finalY = this.initialY + newHeight;
     }
+    
+    public void mirrorHorizontal() {
+        double cx = (initialX + finalX) / 2;
+        double oldInit = initialX, oldFinal = finalX;
+        // specchio orizzontale rispetto all’asse verticale passante per cx
+        this.initialX = 2 * cx - oldFinal;
+        this.finalX   = 2 * cx - oldInit;
+    }
+
+    public void mirrorVertical() {
+        double cy = (initialY + finalY) / 2;
+        double oldInit = initialY, oldFinal = finalY;
+        // specchio verticale rispetto all’asse orizzontale passante per cy
+        this.initialY = 2 * cy - oldFinal;
+        this.finalY   = 2 * cy - oldInit;
+    }
+
 }

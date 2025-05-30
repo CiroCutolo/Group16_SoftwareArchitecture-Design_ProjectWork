@@ -31,11 +31,13 @@ public class DrawingStateHistory {
      * Questo metodo serve a rimuovere dalla cronologia di comandi, l'ultimo comando
      * inserito, successivamente all'esecuzione della undo.
      */
-    public void undo(){
-        if(!history.isEmpty()){
-            Command command = history.pop();
-            command.undo();
+    public Command undo() {
+        if (history.isEmpty()) {
+            return null;
         }
+        Command cmd = history.pop();
+        cmd.undo();
+        return cmd;
     }
     
     public boolean isEmpty() {

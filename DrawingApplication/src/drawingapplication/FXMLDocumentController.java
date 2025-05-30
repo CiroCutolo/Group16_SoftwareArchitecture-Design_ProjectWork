@@ -12,6 +12,7 @@ import Command.Command;
 import Command.CutCommand;
 import Command.DeleteCommand;
 import Command.InsertShapeCommand;
+import Command.MirrorCommand;
 import Command.PasteCommand;
 import Command.ResizeCommand;
 import Command.SendBackwardCommand;
@@ -386,6 +387,11 @@ public class FXMLDocumentController implements Initializable {
         bringForward = new MenuItem("Porta avanti");
         sendBackward = new MenuItem("Porta indietro");
         sendToBack = new MenuItem("Manda in ultimo piano");
+        
+        // 1) Creo il sottomenù Specchiature
+        Menu mirrorMenu = new Menu("Specchiature");
+        MenuItem mirrorH = new MenuItem("Orizzontale");
+        MenuItem mirrorV = new MenuItem("Verticale");
 
         deletion.setOnAction(e -> {
             Shape selectedShape = selectionHandler.getSelectedShape();
@@ -475,6 +481,32 @@ public class FXMLDocumentController implements Initializable {
 
         layerMenu.getItems().addAll(bringToFront, bringForward, sendBackward, sendToBack);
         shapeMenu.getItems().add(layerMenu);
+        
+        // 2) Azioni per i due tipi di specchiatura
+        mirrorH.setOnAction(e -> {
+            Shapes.Shape s = selectionHandler.getSelectedShape();
+            if (s != null) {
+                MirrorCommand cmd = new MirrorCommand(s, true);
+                cmd.execute();
+                commandHistory.push(cmd);
+                //refreshDrawingPane();
+                selectionHandler.clearSelection();
+            }
+        });
+        mirrorV.setOnAction(e -> {
+            Shapes.Shape s = selectionHandler.getSelectedShape();
+            if (s != null) {
+                MirrorCommand cmd = new MirrorCommand(s, false);
+                cmd.execute();
+                commandHistory.push(cmd);
+                //refreshDrawingPane();
+                selectionHandler.clearSelection();
+            }
+        });
+
+        // 3) Aggiungo le voci al menu e poi il menu stesso al context menu
+        mirrorMenu.getItems().addAll(mirrorH, mirrorV);
+        shapeMenu.getItems().add(mirrorMenu);
     }
 
     private void refreshDrawingPane() {
@@ -522,8 +554,12 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void undoLastCommand(MouseEvent event) {
-        if (!commandHistory.isEmpty()) {
-            commandHistory.undo();
+        Command undone = commandHistory.undo();
+        if (undone == null) {
+            return;
+        }
+        // Se non era un MirrorCommand, rifaccio il full-refresh
+        if (!(undone instanceof MirrorCommand)) {
             refreshDrawingPane();
         }
     }
