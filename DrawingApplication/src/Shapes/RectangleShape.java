@@ -1,5 +1,7 @@
 package Shapes;
 
+import Command.Command;
+import Command.RotateCommand;
 import java.io.Serializable;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
@@ -46,7 +48,7 @@ public class RectangleShape extends Shape implements Serializable{
         // Applicazione delle proprietà visive
         rectangle.setStroke(Color.valueOf(perimetralColorString)); // colore del bordo
         rectangle.setFill(Color.valueOf(internalColorString));     // colore di riempimento
-        
+        applyTransformsToNode(rectangle);
         return rectangle;
     }
 
@@ -73,6 +75,10 @@ public class RectangleShape extends Shape implements Serializable{
         // Copia i colori logici nella nuova istanza
         copy.perimetralColorString = this.perimetralColorString;
         copy.internalColorString = this.internalColorString;
+        
+        copy.rotation = this.rotation;
+        copy.mirrorX  = this.mirrorX;
+        copy.mirrorY  = this.mirrorY;
 
         // Crea una nuova shape JavaFX con gli stessi colori
         Rectangle copyRectangle = new Rectangle(
@@ -84,7 +90,8 @@ public class RectangleShape extends Shape implements Serializable{
 
         copyRectangle.setStroke(Color.valueOf(perimetralColorString));
         copyRectangle.setFill(Color.valueOf(internalColorString));
-
+        
+        copy.applyTransformsToNode(copyRectangle);
         copy.setFXShape(copyRectangle);
 
         return copy;

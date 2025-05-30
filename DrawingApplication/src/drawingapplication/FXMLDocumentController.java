@@ -15,6 +15,7 @@ import Command.InsertShapeCommand;
 import Command.MirrorCommand;
 import Command.PasteCommand;
 import Command.ResizeCommand;
+import Command.RotateCommand;
 import Command.SendBackwardCommand;
 import Command.SendToBackCommand;
 import Handlers.ColorSelectionHandler;
@@ -483,23 +484,22 @@ public class FXMLDocumentController implements Initializable {
         shapeMenu.getItems().add(layerMenu);
         
         // 2) Azioni per i due tipi di specchiatura
-        mirrorH.setOnAction(e -> {
+         mirrorH.setOnAction(e -> {
             Shapes.Shape s = selectionHandler.getSelectedShape();
             if (s != null) {
-                MirrorCommand cmd = new MirrorCommand(s, true);
-                cmd.execute();
-                commandHistory.push(cmd);
-                //refreshDrawingPane();
+                Command c = new MirrorCommand(s, false);
+                c.execute();
+                commandHistory.push(c);
                 selectionHandler.clearSelection();
             }
         });
+        
         mirrorV.setOnAction(e -> {
             Shapes.Shape s = selectionHandler.getSelectedShape();
             if (s != null) {
-                MirrorCommand cmd = new MirrorCommand(s, false);
-                cmd.execute();
-                commandHistory.push(cmd);
-                //refreshDrawingPane();
+                Command c = new MirrorCommand(s, true);  
+                c.execute();
+                commandHistory.push(c);
                 selectionHandler.clearSelection();
             }
         });
@@ -507,6 +507,55 @@ public class FXMLDocumentController implements Initializable {
         // 3) Aggiungo le voci al menu e poi il menu stesso al context menu
         mirrorMenu.getItems().addAll(mirrorH, mirrorV);
         shapeMenu.getItems().add(mirrorMenu);
+       
+        // 1) Creo il sottomenù Ruota
+        Menu rotateMenu = new Menu("Ruota");
+        MenuItem rotate45 = new MenuItem("45°");
+        MenuItem rotate90 = new MenuItem("90°");
+        MenuItem rotate180 = new MenuItem("180°");
+
+        // 2) Imposto le azioni di rotazione
+        rotate45.setOnAction(e -> {
+            Shapes.Shape s = selectionHandler.getSelectedShape();
+            if (s != null) {
+                Command c = new RotateCommand(s, 45);
+                c.execute();
+                commandHistory.push(c);
+                updateWorkspace(); 
+                selectionHandler.clearSelection();
+            }
+        });
+
+         rotate90.setOnAction(e -> {
+            Shapes.Shape s = selectionHandler.getSelectedShape();
+            if (s != null) {
+                Command c = new RotateCommand(s, 90);
+                c.execute();
+                commandHistory.push(c);
+                updateWorkspace(); 
+                selectionHandler.clearSelection();
+            }
+        });
+
+         rotate180.setOnAction(e -> {
+            Shapes.Shape s = selectionHandler.getSelectedShape();
+            if (s != null) {
+                Command c = new RotateCommand(s, 180);
+                c.execute();
+                commandHistory.push(c);
+                updateWorkspace(); 
+                selectionHandler.clearSelection();
+            }
+        });
+
+// 3) Aggiungo le voci al menu e poi il menu stesso al context menu
+rotateMenu.getItems().addAll(rotate45, rotate90, rotate180);
+shapeMenu.getItems().add(rotateMenu);
+    }
+    
+    private void updateWorkspace() {
+        refreshDrawingPane();                  // già ridisegna le forme
+        drawingPaneSizeDynamicUpdate(drawingPane); // e ricalcola l’area di lavoro
     }
 
     private void refreshDrawingPane() {
@@ -558,10 +607,6 @@ public class FXMLDocumentController implements Initializable {
         if (undone == null) {
             return;
         }
-        // Se non era un MirrorCommand, rifaccio il full-refresh
-        if (!(undone instanceof MirrorCommand)) {
-            refreshDrawingPane();
-        }
     }
 
     private void updateLayerMenuItems() {
@@ -589,7 +634,7 @@ public class FXMLDocumentController implements Initializable {
     private void drawingPaneSizeDynamicUpdate(Pane drawingPane) {
         double maximumX = 0;
         double maximumY = 0;
-
+        double minimumX = Double.MAX_VALUE, minimumY = Double.MAX_VALUE; 
         for (Node node : drawingPane.getChildren()) {
             if (node instanceof Group) {
                 continue;
@@ -597,6 +642,8 @@ public class FXMLDocumentController implements Initializable {
             Bounds bounds = node.getBoundsInParent();
             maximumX = Math.max(maximumX, bounds.getMaxX());
             maximumY = Math.max(maximumY, bounds.getMaxY());
+            minimumX = Math.min(minimumX, bounds.getMinX());  
+            minimumY = Math.min(minimumY, bounds.getMinY());    
         }
 
         double padding = 100;
@@ -608,6 +655,15 @@ public class FXMLDocumentController implements Initializable {
 
         if (maximumY + padding > drawingPane.getHeight()) {
             drawingPane.setPrefHeight(maximumY + padding);
+        }
+        
+        double dx = minimumX < 0 ? -minimumX + padding : 0;
+        double dy = minimumY < 0 ? -minimumY + padding : 0;
+
+        if (dx != 0 || dy != 0) {
+            for (Shapes.Shape s : drawShapes) {   // lista logica delle forme
+                s.moveBy(dx, dy);                 // sposta logica + nodo FX
+            }
         }
 
     }

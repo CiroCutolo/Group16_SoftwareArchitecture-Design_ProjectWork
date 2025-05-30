@@ -2,6 +2,9 @@ package Shapes;
 
 import javafx.scene.paint.Color;
 import java.io.Serializable;
+import javafx.geometry.Bounds;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
 
 /**
  * La classe astratta Shape rappresenta una macro-categoria di forme.Introduce
@@ -16,7 +19,10 @@ public abstract class Shape implements Serializable, Cloneable {
     protected String internalColorString = Color.TRANSPARENT.toString(); // Viene definito un colore interno di base
     protected transient javafx.scene.shape.Shape fxShape;
     protected double initialX, initialY, finalX, finalY; //Vengono definite le dimensioni comuni alle forme di inizio e fine pressione
-
+    // ─── NUOVI campi trasformazione ────────────────────
+    protected double rotation = 0.0;   // gradi cumulativi
+    protected boolean mirrorX = false; // specchio orizzontale
+    protected boolean mirrorY = false; // specchio verticale
     /**
      * Costruttore della forma astratta.
      *
@@ -31,6 +37,11 @@ public abstract class Shape implements Serializable, Cloneable {
         this.finalX = finalX;
         this.finalY = finalY;
     }
+    
+    /* --- getters/setters --------------------------------------------------- */
+    public double  getRotation() { return rotation; }
+    public boolean isMirroredX() { return mirrorX; }
+    public boolean isMirroredY() { return mirrorY; }
 
     /**
      * Metodo astratto che converte l'oggetto Shape in un oggetto Shape di
@@ -162,7 +173,9 @@ public abstract class Shape implements Serializable, Cloneable {
      *
      * @return nuova istanza della forma, con le stesse proprietà
      */
-    public abstract Shape clone();
+    
+    @Override
+    abstract public Shape clone();
 
     /**
      * Sposta la forma di una quantità dx, dy sia a livello logico (coordinate
@@ -229,20 +242,38 @@ public abstract class Shape implements Serializable, Cloneable {
         this.finalY = this.initialY + newHeight;
     }
     
-    public void mirrorHorizontal() {
-        double cx = (initialX + finalX) / 2;
-        double oldInit = initialX, oldFinal = finalX;
-        // specchio orizzontale rispetto all’asse verticale passante per cx
-        this.initialX = 2 * cx - oldFinal;
-        this.finalX   = 2 * cx - oldInit;
+    /* --- operazioni di “business” ------------------------------------------ */
+    public void rotate(double angle) {
+        rotation = (rotation + angle) % 360;
+        if (fxShape != null) applyTransformsToNode(fxShape);
+    }
+    public void mirror(boolean horizontal) {
+        if (horizontal) mirrorX = !mirrorX;
+        else            mirrorY = !mirrorY;
+        if (fxShape != null) applyTransformsToNode(fxShape);
     }
 
-    public void mirrorVertical() {
-        double cy = (initialY + finalY) / 2;
-        double oldInit = initialY, oldFinal = finalY;
-        // specchio verticale rispetto all’asse orizzontale passante per cy
-        this.initialY = 2 * cy - oldFinal;
-        this.finalY   = 2 * cy - oldInit;
-    }
+    /* --- traduce lo stato logico in trasformazioni JavaFX ------------------ */
+    protected void applyTransformsToNode(javafx.scene.shape.Shape node) {
+        node.getTransforms().clear();
 
+        // mirror
+        double sx = mirrorX ? -1 : 1;
+        double sy = mirrorY ? -1 : 1;
+        if (mirrorX || mirrorY) {
+            Bounds b = node.getBoundsInLocal();
+            double cx = (b.getMinX() + b.getMaxX()) / 2;
+            double cy = (b.getMinY() + b.getMaxY()) / 2;
+            node.getTransforms().add(new Scale(sx, sy, cx, cy));
+        }
+
+        // rotazione
+        if (rotation != 0) {
+            Bounds b = node.getBoundsInLocal();
+            double cx = (b.getMinX() + b.getMaxX()) / 2;
+            double cy = (b.getMinY() + b.getMaxY()) / 2;
+            node.getTransforms().add(new Rotate(rotation, cx, cy));
+        }
+    }
+    
 }

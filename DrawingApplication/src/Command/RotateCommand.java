@@ -10,16 +10,16 @@ import Shapes.Shape;
  *
  * @author genna
  */
-public class MirrorCommand implements Command {
+public class RotateCommand implements Command {
 
     private final Shape shape;
-    private final boolean horizontal;
+    private final double angle;
 
-    public MirrorCommand(Shape shape, boolean horizontal) {
+    public RotateCommand(Shape shape, double angle) {
         this.shape = shape;
-        this.horizontal = horizontal;
+        this.angle = angle;
     }
 
-    @Override public void execute() { shape.mirror(horizontal); }
-    @Override public void undo()    { shape.mirror(horizontal); }
+    @Override public void execute() { shape.rotate(angle); }
+    @Override public void undo()    { shape.rotate(-angle); }
 }

@@ -48,7 +48,7 @@ public class EllipseShape extends Shape implements Serializable{
         // Applicazione delle proprietà visive
         ellipse.setStroke(Color.valueOf(perimetralColorString)); // colore del bordo
         ellipse.setFill(Color.valueOf(internalColorString)); // colore di riempimento
-       
+       applyTransformsToNode(ellipse);
         return ellipse;
         
     }
@@ -77,6 +77,10 @@ public class EllipseShape extends Shape implements Serializable{
         // Copia i colori logici nella nuova istanza
         copy.perimetralColorString = this.perimetralColorString;
         copy.internalColorString = this.internalColorString;
+        
+        copy.rotation = this.rotation;
+        copy.mirrorX  = this.mirrorX;
+        copy.mirrorY  = this.mirrorY;
 
         Ellipse copyEllipse = new Ellipse(
             (initialX + finalX) / 2,
@@ -87,7 +91,8 @@ public class EllipseShape extends Shape implements Serializable{
 
         copyEllipse.setStroke(Color.valueOf(perimetralColorString));
         copyEllipse.setFill(Color.valueOf(internalColorString));
-
+        
+        copy.applyTransformsToNode(copyEllipse);
         copy.setFXShape(copyEllipse);
 
         return copy;

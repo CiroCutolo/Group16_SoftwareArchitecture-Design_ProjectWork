@@ -39,7 +39,7 @@ public class LineShape extends Shape implements Serializable{
         
         // Applicazione delle proprietà visive
         line.setStroke(Color.valueOf(perimetralColorString)); // colore del bordo
-        
+        applyTransformsToNode(line);
         return line;
         
     }
@@ -66,8 +66,13 @@ public class LineShape extends Shape implements Serializable{
         // Copia i colori logici nella nuova istanza
         copy.perimetralColorString = this.perimetralColorString;
         
+        copy.rotation = this.rotation;
+        copy.mirrorX  = this.mirrorX;
+        copy.mirrorY  = this.mirrorY;
+        
         Line copyLine = new Line(initialX, initialY, finalX, finalY);
         copyLine.setStroke(Color.valueOf(perimetralColorString));
+        copy.applyTransformsToNode(copyLine);
         copy.setFXShape(copyLine);
         return copy;
     }

@@ -43,6 +43,7 @@ public class TextShape extends Shape implements Serializable {
         text.setFont(Font.font(fontSize));
         text.setStroke(Color.valueOf(perimetralColorString)); // colore del bordo
         text.setFill(Color.valueOf(internalColorString));     // colore di riempimento
+        applyTransformsToNode(text);
         return text;
     }
 
@@ -67,11 +68,16 @@ public class TextShape extends Shape implements Serializable {
         copy.fontSize = this.fontSize;
         copy.perimetralColorString = this.perimetralColorString;
         copy.internalColorString = this.internalColorString;
+        
+        copy.rotation = this.rotation;
+        copy.mirrorX  = this.mirrorX;
+        copy.mirrorY  = this.mirrorY;
 
         Text fxText = new Text(initialX, initialY, textContent);
         fxText.setFont(Font.font(fontSize));
         fxText.setFill(Color.valueOf(internalColorString));
         fxText.setStroke(Color.valueOf(perimetralColorString));
+        copy.applyTransformsToNode(fxText);
         copy.setFXShape(fxText);
 
         return copy;
