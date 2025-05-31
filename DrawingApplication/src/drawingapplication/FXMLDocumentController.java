@@ -24,6 +24,7 @@ import Handlers.GridHandler;
 import Handlers.PreviewHandler;
 import Handlers.ShapeIOManager;
 import Handlers.ShapeSelectionHandler;
+import Shapes.IrregularPolygonShape;
 import Shapes.Shape;
 import Shapes.TextShape;
 import java.net.URL;
@@ -40,6 +41,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
+import javafx.scene.Cursor;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.control.Alert;
@@ -71,6 +73,7 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Polyline;
 import javafx.scene.text.Text;
 
 /**
@@ -90,10 +93,7 @@ public class FXMLDocumentController implements Initializable {
     private Button purpleButton, blackButton, pinkButton, yellowButton, greenButton, blueButton, redButton, whiteButton, cyanButton;
     @FXML
     private HBox colorToolbarSection;
-    @FXML
-    private ToggleGroup shapeToggleGroup;
-    @FXML
-    private ToggleButton lineButton, rectangleButton, ellipseButton;
+    private ToggleButton lineButton;
     @FXML
     private ToggleGroup radioColorButtonToggleGroup;
     @FXML
@@ -129,6 +129,10 @@ public class FXMLDocumentController implements Initializable {
     private MenuItem pasteMenuItem;
     private String selectedShapeType = null;
     private Boolean isPaneSizeChanged = false;
+    private IrregularPolygonShape currentPolygon;
+    private List<javafx.scene.shape.Circle> polygonSidesPreviewDots = new ArrayList<>();
+    private boolean isDrawingPolygon = false;
+    private Tooltip polygonTooltip = new Tooltip("Clicca per aggiungere punti. Clicca vicino al punto iniziale per chiudere.");
 
     @FXML
     private Button undoButton;
@@ -152,8 +156,19 @@ public class FXMLDocumentController implements Initializable {
     private GridHandler gridHandler;
     @FXML
     private ComboBox<Double> gridSizeComboBox;
-    @FXML
     private ToggleButton textButton;
+    @FXML
+    private ToggleButton lineButton1;
+    @FXML
+    private ToggleGroup shapeToggleGroup1;
+    @FXML
+    private ToggleButton rectangleButton1;
+    @FXML
+    private ToggleButton ellipseButton1;
+    @FXML
+    private ToggleButton textButton1;
+    @FXML
+    private ToggleButton polygonButton;
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
@@ -188,13 +203,14 @@ public class FXMLDocumentController implements Initializable {
 
         //Evita che la forma vada oltre l'area di disegno
         //Imposta tooltip e immagine dei pulsanti delle forme
-        setTooltipAndImage(rectangleButton, "Rectangle", "rectangle_icon.png");
-        setTooltipAndImage(ellipseButton, "Ellipse", "ellipse_icon.png");
-        setTooltipAndImage(lineButton, "Line", "line_icon.png");
-        setTooltipAndImage(textButton,"Text","text_icon.png");
+        setTooltipAndImage(rectangleButton1, "Rectangle", "rectangle_icon.png");
+        setTooltipAndImage(ellipseButton1, "Ellipse", "ellipse_icon.png");
+        setTooltipAndImage(lineButton1, "Line", "line_icon.png");
+        setTooltipAndImage(textButton1,"Text","text_icon.png");
+        setTooltipAndImage(polygonButton, "Polygon", "polygon_icon.png");
         //Pressione del mouse
         drawingPane.setOnMousePressed(e -> {
-            selectionHandler.onMousePressed(e, drawingPane);
+            //selectionHandler.onMousePressed(e, drawingPane);
             if (selectedShapeType != null) {
                 //Se è una stringa
                 if("TEXT".equals(selectedShapeType)){
@@ -204,10 +220,37 @@ public class FXMLDocumentController implements Initializable {
                     insertCmd.execute();
                     commandHistory.push(insertCmd);
                     
-                }
-                
-                //Se è un'altra forma
-                else{
+                }else if ("POLYGON".equals(selectedShapeType) && isDrawingPolygon) {
+                        if (e.getButton() == MouseButton.PRIMARY) {
+                            double x = e.getX();
+                            double y = e.getY();
+
+                            currentPolygon.addPoint(x, y);
+
+                            javafx.scene.shape.Circle dot = new javafx.scene.shape.Circle(x, y, 3, Color.BLACK);
+                            drawingPane.getChildren().add(dot);
+                            polygonSidesPreviewDots.add(dot);
+
+                            if (currentPolygon.getPolygonPoints().size() > 2 && currentPolygon.isClosed()) {
+                                // Completa il poligono
+                                drawingPane.setCursor(Cursor.DEFAULT);
+                                Tooltip.uninstall(drawingPane, polygonTooltip);
+                                drawingPane.getChildren().removeAll(polygonSidesPreviewDots);
+
+                                Command insertCmd = new InsertShapeCommand(currentPolygon, drawShapes, drawingPane);
+                                insertCmd.execute();
+                                commandHistory.push(insertCmd);
+
+                                // Reset stato
+                                isDrawingPolygon = false;
+                                selectedShapeType = null;
+                                polygonButton.setSelected(false);
+                                currentPolygon = null;
+                                polygonSidesPreviewDots.clear();
+                            }
+                        }
+                        e.consume();
+                    }else{
                     previewHandler.handleMousePressed(e);
                 }
             }
@@ -216,7 +259,7 @@ public class FXMLDocumentController implements Initializable {
 
         //Trascinamento mouse
         drawingPane.setOnMouseDragged(e -> {
-            selectionHandler.onMouseDragged(e);
+            //selectionHandler.onMouseDragged(e);
             if (selectedShapeType != null && !"TEXT".equals(selectedShapeType)) {
                 previewHandler.handleMouseDragged(e, selectedShapeType, drawingPane);
                 drawingPaneSizeDynamicUpdate(drawingPane);
@@ -225,7 +268,7 @@ public class FXMLDocumentController implements Initializable {
 
         //Rilascio del mouse
         drawingPane.setOnMouseReleased(e -> {
-            selectionHandler.onMouseReleased(e, drawShapes, drawingPane);
+            //selectionHandler.onMouseReleased(e, drawShapes, drawingPane);
             if (selectedShapeType != null && !"TEXT".equals(selectedShapeType)) {
                 Shape s = previewHandler.handleMouseReleased(e, selectedShapeType, drawingPane,
                         colorHandler.getPerimetralColor(), colorHandler.getFillingColor());
@@ -296,7 +339,7 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void selectRectangle(ActionEvent event) {
-        if (rectangleButton.isSelected()) {
+        if (rectangleButton1.isSelected()) {
             selectedShapeType = "RECTANGLE";
         } else {
             selectedShapeType = null;
@@ -305,7 +348,7 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void selectEllipse(ActionEvent event) {
-        if (ellipseButton.isSelected()) {
+        if (ellipseButton1.isSelected()) {
             selectedShapeType = "ELLIPSE";
         } else {
             selectedShapeType = null;
@@ -314,7 +357,7 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void selectLine(ActionEvent event) {
-        if (lineButton.isSelected()) {
+        if (lineButton1.isSelected()) {
             selectedShapeType = "LINE";
         } else {
             selectedShapeType = null;
@@ -323,9 +366,30 @@ public class FXMLDocumentController implements Initializable {
     
     @FXML
     private void selectText(ActionEvent event) {
-        if (textButton.isSelected()) {
+        if (textButton1.isSelected()) {
             selectedShapeType = "TEXT";
         } else {
+            selectedShapeType = null;
+        }
+    }
+    
+    @FXML
+    private void selectPolygon(ActionEvent event) {
+        if (polygonButton.isSelected()) {
+            selectedShapeType = "POLYGON";
+            drawingPane.setCursor(Cursor.CROSSHAIR);
+            polygonTooltip = new Tooltip("Clicca per aggiungere punti. Clicca vicino al punto iniziale per chiudere.");
+            Tooltip.install(drawingPane, polygonTooltip);
+
+            currentPolygon = new IrregularPolygonShape();
+            currentPolygon.setPerimetralColor(colorHandler.getPerimetralColor());
+            currentPolygon.setInternalColor(colorHandler.getFillingColor());
+
+            polygonSidesPreviewDots.clear();
+            isDrawingPolygon = true;
+
+        } else {
+            cancelPolygonDrawing();
             selectedShapeType = null;
         }
     }
@@ -344,15 +408,6 @@ public class FXMLDocumentController implements Initializable {
         img.setFitWidth(dimension);
         node.setGraphic(img);
     }
-
-    /**
-     * Metodo dedito alla gestione della selezione delle forme
-     *
-     * @param event evento di click sul riquadro di disegno che può scatenare
-     * l'azione di selezione
-     *
-     * @author ciroc
-     */
 
     /**
      * Metodo dedito alla creazione di un menù contestuale generico per il
@@ -849,5 +904,17 @@ shapeMenu.getItems().add(rotateMenu);
         alert.setHeaderText(null);
         alert.setContentText(msg);
         alert.showAndWait();
+    }
+
+    private void cancelPolygonDrawing() {
+        if (isDrawingPolygon) {
+            drawingPane.getChildren().removeAll(polygonSidesPreviewDots);
+            Tooltip.uninstall(drawingPane, polygonTooltip);
+            drawingPane.setCursor(Cursor.DEFAULT);
+
+            isDrawingPolygon = false;
+            currentPolygon = null;
+            polygonSidesPreviewDots.clear();
+        }
     }
 }

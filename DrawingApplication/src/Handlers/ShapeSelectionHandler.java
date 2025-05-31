@@ -63,21 +63,21 @@ public class ShapeSelectionHandler {
      * @param e
      * @param drawingPane 
      */
-    public void onMousePressed(MouseEvent e, Pane drawingPane) {
+    /*public void onMousePressed(MouseEvent e, Pane drawingPane) {
         if (e.getButton() == MouseButton.PRIMARY) {
             beginSelectionRectangle(e, drawingPane);
         }
-    }
+    }*/
 
     /**
      * @author ciroc
      * @param e 
      */
-    public void onMouseDragged(MouseEvent e) {
+    /*public void onMouseDragged(MouseEvent e) {
         if (isDraggingForSelection) {
             updateSelectionArea(e);
         }
-    }
+    }*/
 
     /**
      * @author ciroc
@@ -85,11 +85,11 @@ public class ShapeSelectionHandler {
      * @param drawShapes
      * @param drawingPane 
      */
-    public void onMouseReleased(MouseEvent e, List<Shape> drawShapes, Pane drawingPane) {
+    /*public void onMouseReleased(MouseEvent e, List<Shape> drawShapes, Pane drawingPane) {
         if (isDraggingForSelection) {
             finalizeSelectionArea(e, drawShapes, drawingPane);
         }
-    }
+    }*/
 
     /**
     * Gestisce la selezione della forma
@@ -200,7 +200,7 @@ public class ShapeSelectionHandler {
      * @param e evento del mouse
      * @param drawingPane pannello su cui disegnare l'area di selezione
      */
-    private void beginSelectionRectangle(MouseEvent e, Pane drawingPane) {
+    /*private void beginSelectionRectangle(MouseEvent e, Pane drawingPane) {
         selectionStartingPointX = e.getX();
         selectionStartingPointY = e.getY();
 
@@ -214,13 +214,13 @@ public class ShapeSelectionHandler {
 
         isDraggingForSelection = true;
         clearSelection();
-    }
+    }*/
 
     /**
      * Aggiorna le dimensioni dell'area di selezione in tempo reale, in base alla posizione del mouse.
      * @param e evento del mouse
      */
-    private void updateSelectionArea(MouseEvent e) {
+    /*private void updateSelectionArea(MouseEvent e) {
         double currentX = e.getX();
         double currentY = e.getY();
         double width = Math.abs(currentX - selectionStartingPointX);
@@ -230,7 +230,7 @@ public class ShapeSelectionHandler {
         selectionArea.setY(Math.min(currentY, selectionStartingPointY));
         selectionArea.setWidth(width);
         selectionArea.setHeight(height);
-    }
+    }*/
 
     /**
      * Serve a selezionare tutte le forme contenute nell'area di selezione,
@@ -240,7 +240,7 @@ public class ShapeSelectionHandler {
      * @param drawShapes lista delle forme disegnate
      * @param drawingPane pannello di disegno
      */
-    private void finalizeSelectionArea(MouseEvent e, List<Shape> drawShapes, Pane drawingPane) {
+    /*private void finalizeSelectionArea(MouseEvent e, List<Shape> drawShapes, Pane drawingPane) {
         double dragDistance = Math.hypot(e.getX() - selectionStartingPointX, e.getY() - selectionStartingPointY);
 
         if (dragDistance > 5) {
@@ -260,7 +260,7 @@ public class ShapeSelectionHandler {
         drawingPane.getChildren().remove(selectionArea);
         selectionArea = null;
         isDraggingForSelection = false;
-    }
+    }*/
 
     /*
     ----------------------------------

@@ -75,6 +75,9 @@ public class ShapeFactory {
             case "TEXT":
                 shape = new TextShape(textContent, x1, y1);
                 break;
+            case "POLYGON":
+                shape = new TextShape(textContent, x1, y1);
+                break;
             default:
                 throw new IllegalArgumentException("Forma inserita, non supportata: " + selected_shape);
         }
