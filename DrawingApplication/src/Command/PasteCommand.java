@@ -9,19 +9,10 @@ package Command;
  * @author Sterm
  */
 import Shapes.Shape;
-import Shapes.ShapeFactory;
 import Shapes.TextShape;
 import java.util.ArrayList;
 import javafx.scene.layout.Pane;
 import java.util.List;
-
-import javafx.scene.layout.Pane;
-import java.util.List;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
-
-
-
 
 
 /**
@@ -64,42 +55,27 @@ public class PasteCommand implements Command {
         if (!clipboard.isEmpty()) {
             List<Shape> clones = clipboard.getContents(); // cloni tramite Prototype
             for (Shape shape : clones) {
-            // Calcola dimensioni originali
-            double width = Math.abs(shape.getFinalX() - shape.getInitialX());
-            double height = Math.abs(shape.getFinalY() - shape.getInitialY());
+                double centerX = (shape.getInitialX() + shape.getFinalX()) / 2;
+                double centerY = (shape.getInitialY() + shape.getFinalY()) / 2;
 
-            // Spostamento per centrare la forma sul punto cliccato
-            double newStartX = posX - width / 2;
-            double newStartY = posY - height / 2;
-            double newEndX = newStartX + width;
-            double newEndY = newStartY + height;
-            
-            if(newStartY < 0){
-                newStartY -= newStartY - 15;
-                newEndY -= newStartY - 15;
-            }
-            if(newStartX < 0){
-                newStartX -= newStartX - 15;
-                newEndX -= newStartX - 15;
+                double dx = posX - centerX;
+                double dy = posY - centerY;
+
+                shape.moveBy(dx, dy); // <-- anche per poligoni ora funziona, grazie all'override
+
+                // Ricrea e assegna il nodo grafico
+                javafx.scene.shape.Shape fxShape = shape.toFXShape();
+                shape.setFXShape(fxShape);
+
+                if ("TEXT".equals(shape.getType())) {
+                    ((TextShape) shape).checkHeight();
+                }
+
+                drawingPane.getChildren().add(fxShape);
+                drawShapes.add(shape);
+                pastedShapes.add(shape);
             }
 
-            // Aggiorna le coordinate nel clone
-            shape.setInitialX(newStartX);
-            shape.setInitialY(newStartY);
-            shape.setFinalX(newEndX);
-            shape.setFinalY(newEndY);
-
-            // Ricrea il nodo grafico aggiornato
-            javafx.scene.shape.Shape fxShape = shape.toFXShape();
-            shape.setFXShape(fxShape);
-
-            if(shape.getType().equals("TEXT")){
-                ((TextShape) shape).checkHeight();
-            }
-            drawingPane.getChildren().add(fxShape);
-            drawShapes.add(shape);
-            pastedShapes.add(shape);
-            }
         }
     }
     

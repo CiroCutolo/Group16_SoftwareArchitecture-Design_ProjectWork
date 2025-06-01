@@ -49,6 +49,7 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Dialog;
@@ -59,7 +60,6 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.control.Tooltip;
@@ -74,8 +74,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Polyline;
-import javafx.scene.text.Text;
 
 /**
  *
@@ -236,9 +234,13 @@ public class FXMLDocumentController implements Initializable {
 
                             if (currentPolygon.getPolygonPoints().size() > 2 && currentPolygon.isClosed()) {
                                 // Completa il poligono
+                                
                                 drawingPane.setCursor(Cursor.DEFAULT);
                                 Tooltip.uninstall(drawingPane, polygonTooltip);
                                 drawingPane.getChildren().removeAll(polygonSidesPreviewDots);
+                                
+                                //Calcola il bounding box del poligono
+                                currentPolygon.computeBoundingBox();
 
                                 Command insertCmd = new InsertShapeCommand(currentPolygon, drawShapes, drawingPane);
                                 commandHistory.executeCommand(insertCmd);
@@ -254,6 +256,7 @@ public class FXMLDocumentController implements Initializable {
                         }
                         e.consume();
                     }else{
+                    
                     previewHandler.handleMousePressed(e);
                 }
             }
@@ -263,7 +266,7 @@ public class FXMLDocumentController implements Initializable {
         //Trascinamento mouse
         drawingPane.setOnMouseDragged(e -> {
             //selectionHandler.onMouseDragged(e);
-            if (selectedShapeType != null && !"TEXT".equals(selectedShapeType)) {
+            if (selectedShapeType != null && !"TEXT".equals(selectedShapeType) && !"POLYGON".equals(selectedShapeType)) {
                 previewHandler.handleMouseDragged(e, selectedShapeType, drawingPane);
                 drawingPaneSizeDynamicUpdate(drawingPane);
             }
@@ -272,7 +275,7 @@ public class FXMLDocumentController implements Initializable {
         //Rilascio del mouse
         drawingPane.setOnMouseReleased(e -> {
             //selectionHandler.onMouseReleased(e, drawShapes, drawingPane);
-            if (selectedShapeType != null && !"TEXT".equals(selectedShapeType)) {
+            if (selectedShapeType != null && !"TEXT".equals(selectedShapeType) && !"POLYGON".equals(selectedShapeType)) {
                 Shape s = previewHandler.handleMouseReleased(e, selectedShapeType, drawingPane,
                         colorHandler.getPerimetralColor(), colorHandler.getFillingColor());
 
@@ -573,6 +576,7 @@ public class FXMLDocumentController implements Initializable {
         // 2) Imposto le azioni di rotazione
         rotate45.setOnAction(e -> {
             Shapes.Shape s = selectionHandler.getSelectedShape();
+            System.out.println(selectionHandler.getSelectedShape());
             if (s != null) {
                 Command c = new RotateCommand(s, 45);
                 c.execute();
@@ -604,9 +608,9 @@ public class FXMLDocumentController implements Initializable {
             }
         });
 
-// 3) Aggiungo le voci al menu e poi il menu stesso al context menu
-rotateMenu.getItems().addAll(rotate45, rotate90, rotate180);
-shapeMenu.getItems().add(rotateMenu);
+        // 3) Aggiungo le voci al menu e poi il menu stesso al context menu
+        rotateMenu.getItems().addAll(rotate45, rotate90, rotate180);
+        shapeMenu.getItems().add(rotateMenu);
     }
     
     private void updateWorkspace() {
@@ -619,6 +623,7 @@ shapeMenu.getItems().add(rotateMenu);
 
         for (Shape shape : drawShapes) {
             javafx.scene.shape.Shape fxShape = shape.toFXShape();
+            
             shape.setFXShape(fxShape);
             
             // Non serve??
@@ -663,6 +668,7 @@ shapeMenu.getItems().add(rotateMenu);
         if (undone == null) {
             return;
         }
+        refreshDrawingPane();
     }
 
     private void updateLayerMenuItems() {
@@ -775,10 +781,14 @@ shapeMenu.getItems().add(rotateMenu);
         // Recupera le dimensioni attuali della forma
         double oldWidth = shape.getWidth();
         double oldHeight = shape.getHeight();
+        
+        //Proporzione della forma
+        double aspectRatio = oldWidth / oldHeight;
 
         // Campi di testo precompilati con le dimensioni correnti
         TextField widthField = new TextField(String.valueOf(oldWidth));
         TextField heightField = new TextField(String.valueOf(oldHeight));
+        CheckBox lockRatioCheckBox = new CheckBox("Mantieni proporzioni");
 
         // Crea il dialogo di tipo JavaFX
         Dialog<ButtonType> dialog = new Dialog<>();
@@ -793,6 +803,30 @@ shapeMenu.getItems().add(rotateMenu);
         // Inserisce righe con etichette, campi di input e unità "px"
         grid.addRow(0, new Label("Larghezza:"), widthField, new Label("px"));
         grid.addRow(1, new Label("Altezza:"), heightField, new Label("px"));
+        
+        grid.add(lockRatioCheckBox, 0, 2, 3, 1); //checkbox su riga nuova
+
+        // Listener per mantenere proporzioni quando il checkbox è attivo
+        widthField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (!isNowFocused && lockRatioCheckBox.isSelected()) {
+                try {
+                    double newWidth = Double.parseDouble(widthField.getText());
+                    double newHeight = newWidth / aspectRatio;
+                    heightField.setText(String.format("%.2f", newHeight));
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+
+        // Quando si modifica l’altezza e si perde il focus
+        heightField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (!isNowFocused && lockRatioCheckBox.isSelected()) {
+                try {
+                    double newHeight = Double.parseDouble(heightField.getText());
+                    double newWidth = newHeight * aspectRatio;
+                    widthField.setText(String.format("%.2f", newWidth));
+                } catch (NumberFormatException ignored) {}
+            }
+        });
 
         // Aggiunge il layout al contenuto del dialogo
         dialog.getDialogPane().setContent(grid);
