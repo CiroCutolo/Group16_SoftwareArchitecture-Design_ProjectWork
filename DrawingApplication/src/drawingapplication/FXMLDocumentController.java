@@ -26,6 +26,7 @@ import Handlers.ShapeIOManager;
 import Handlers.ShapeSelectionHandler;
 import Shapes.IrregularPolygonShape;
 import Shapes.Shape;
+import Shapes.ShapeFactory;
 import Shapes.TextShape;
 import java.net.URL;
 import java.util.ArrayList;
@@ -120,6 +121,8 @@ public class FXMLDocumentController implements Initializable {
 
     //Clipboard per copiare le forme
     private Clipboard clipboard = new Clipboard();
+    
+    private ShapeFactory shapeFactory = new ShapeFactory();
 
     private List<Shape> drawShapes = new ArrayList<>();
     private ContextMenu shapeMenu;
@@ -238,7 +241,7 @@ public class FXMLDocumentController implements Initializable {
                                 drawingPane.getChildren().removeAll(polygonSidesPreviewDots);
 
                                 Command insertCmd = new InsertShapeCommand(currentPolygon, drawShapes, drawingPane);
-                                insertCmd.execute();
+                                commandHistory.executeCommand(insertCmd);
                                 commandHistory.push(insertCmd);
 
                                 // Reset stato
@@ -381,9 +384,7 @@ public class FXMLDocumentController implements Initializable {
             polygonTooltip = new Tooltip("Clicca per aggiungere punti. Clicca vicino al punto iniziale per chiudere.");
             Tooltip.install(drawingPane, polygonTooltip);
 
-            currentPolygon = new IrregularPolygonShape();
-            currentPolygon.setPerimetralColor(colorHandler.getPerimetralColor());
-            currentPolygon.setInternalColor(colorHandler.getFillingColor());
+            currentPolygon = (IrregularPolygonShape) shapeFactory.createShape(selectedShapeType, 0, 0, 0, 0, colorHandler.getPerimetralColor(), colorHandler.getFillingColor());
 
             polygonSidesPreviewDots.clear();
             isDrawingPolygon = true;
