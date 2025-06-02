@@ -95,7 +95,7 @@
                      <children>
                         <HBox prefHeight="124.0" prefWidth="265.0" style="-fx-background-color: #a6a6a6; -fx-background-radius: 10; -fx-border-radius: 10;">
                            <children>
-                              <ToggleButton fx:id="lineButton1" mnemonicParsing="false" onAction="#selectLine" prefHeight="31.0" prefWidth="102.0" style="-fx-border-radius: 10; -fx-background-radius: 10;">
+                              <ToggleButton fx:id="lineButton1" mnemonicParsing="false" onAction="#selectShapeButton" prefHeight="31.0" prefWidth="102.0" style="-fx-border-radius: 10; -fx-background-radius: 10;">
                                  <toggleGroup>
                                     <ToggleGroup fx:id="shapeToggleGroup1" />
                                  </toggleGroup>
@@ -103,12 +103,12 @@
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                  </HBox.margin>
                               </ToggleButton>
-                              <ToggleButton fx:id="rectangleButton1" mnemonicParsing="false" onAction="#selectRectangle" prefHeight="31.0" prefWidth="102.0" style="-fx-background-radius: 10; -fx-border-radius: 10;" toggleGroup="$shapeToggleGroup1">
+                              <ToggleButton fx:id="rectangleButton1" mnemonicParsing="false" onAction="#selectShapeButton" prefHeight="31.0" prefWidth="102.0" style="-fx-background-radius: 10; -fx-border-radius: 10;" toggleGroup="$shapeToggleGroup1">
                                  <HBox.margin>
                                     <Insets bottom="5.0" right="5.0" top="5.0" />
                                  </HBox.margin>
                               </ToggleButton>
-                              <ToggleButton fx:id="ellipseButton1" mnemonicParsing="false" onAction="#selectEllipse" prefHeight="31.0" prefWidth="102.0" style="-fx-background-radius: 10; -fx-border-radius: 10;" toggleGroup="$shapeToggleGroup1">
+                              <ToggleButton fx:id="ellipseButton1" mnemonicParsing="false" onAction="#selectShapeButton" prefHeight="31.0" prefWidth="102.0" style="-fx-background-radius: 10; -fx-border-radius: 10;" toggleGroup="$shapeToggleGroup1">
                                  <HBox.margin>
                                     <Insets bottom="5.0" right="5.0" top="5.0" />
                                  </HBox.margin>
@@ -120,12 +120,12 @@
                               <Insets top="5.0" />
                            </VBox.margin>
                            <children>
-                              <ToggleButton fx:id="textButton1" mnemonicParsing="false" onAction="#selectText" prefHeight="31.0" prefWidth="102.0" style="-fx-background-radius: 10; -fx-border-radius: 10;" toggleGroup="$shapeToggleGroup1">
+                              <ToggleButton fx:id="textButton1" mnemonicParsing="false" onAction="#selectShapeButton" prefHeight="31.0" prefWidth="102.0" style="-fx-background-radius: 10; -fx-border-radius: 10;" toggleGroup="$shapeToggleGroup1">
                                  <HBox.margin>
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                  </HBox.margin>
                               </ToggleButton>
-                              <ToggleButton fx:id="polygonButton" alignment="CENTER" mnemonicParsing="false" onAction="#selectPolygon" prefHeight="31.0" prefWidth="102.0" style="-fx-background-radius: 10; -fx-border-radius: 10;" toggleGroup="$shapeToggleGroup1">
+                              <ToggleButton fx:id="polygonButton" alignment="CENTER" mnemonicParsing="false" onAction="#selectShapeButton" prefHeight="31.0" prefWidth="102.0" style="-fx-background-radius: 10; -fx-border-radius: 10;" toggleGroup="$shapeToggleGroup1">
                                  <HBox.margin>
                                     <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                  </HBox.margin>

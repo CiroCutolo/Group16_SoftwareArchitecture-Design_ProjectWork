@@ -22,11 +22,13 @@ import Handlers.ColorSelectionHandler;
 import Handlers.DrawingStateHistory;
 import Handlers.GridHandler;
 import Handlers.PreviewHandler;
+import Handlers.ShapeButtonSelectionHandler;
 import Handlers.ShapeIOManager;
 import Handlers.ShapeSelectionHandler;
 import Shapes.IrregularPolygonShape;
 import Shapes.Shape;
 import Shapes.ShapeFactory;
+import Shapes.ShapeType;
 import Shapes.TextShape;
 import java.net.URL;
 import java.util.ArrayList;
@@ -116,6 +118,8 @@ public class FXMLDocumentController implements Initializable {
     private final DrawingStateHistory commandHistory = new DrawingStateHistory();
     //Handler per la selezione della forma
     private final ShapeSelectionHandler selectionHandler = new ShapeSelectionHandler(commandHistory);
+    
+    private ShapeButtonSelectionHandler shapeButtonHandler;
 
     //Clipboard per copiare le forme
     private Clipboard clipboard = new Clipboard();
@@ -195,6 +199,8 @@ public class FXMLDocumentController implements Initializable {
         icon.setFitWidth(30);
         icon.setFitHeight(30);
         colorHandler.init(perimeterRadio, fillRadio);
+        
+        shapeButtonHandler = new ShapeButtonSelectionHandler(drawingPane, colorHandler, previewHandler);
 
         //Registra i pulsanti per la selezione dei colori
         colorHandler.registerColorButtons(Arrays.asList(
@@ -211,78 +217,16 @@ public class FXMLDocumentController implements Initializable {
         setTooltipAndImage(polygonButton, "Polygon", "polygon_icon.png");
         //Pressione del mouse
         drawingPane.setOnMousePressed(e -> {
-            //selectionHandler.onMousePressed(e, drawingPane);
-            if (selectedShapeType != null) {
-                //Se è una stringa
-                if("TEXT".equals(selectedShapeType)){
-                    Optional<TextShape> result = StringDialog(e);
-                    TextShape s = result.get();
-                    Command insertCmd = new InsertShapeCommand(s, drawShapes, drawingPane);
-                    insertCmd.execute();
-                    commandHistory.push(insertCmd);
-                    
-                }else if ("POLYGON".equals(selectedShapeType) && isDrawingPolygon) {
-                        if (e.getButton() == MouseButton.PRIMARY) {
-                            double x = e.getX();
-                            double y = e.getY();
-
-                            currentPolygon.addPoint(x, y);
-
-                            javafx.scene.shape.Circle dot = new javafx.scene.shape.Circle(x, y, 3, Color.BLACK);
-                            drawingPane.getChildren().add(dot);
-                            polygonSidesPreviewDots.add(dot);
-
-                            if (currentPolygon.getPolygonPoints().size() > 2 && currentPolygon.isClosed()) {
-                                // Completa il poligono
-                                
-                                drawingPane.setCursor(Cursor.DEFAULT);
-                                Tooltip.uninstall(drawingPane, polygonTooltip);
-                                drawingPane.getChildren().removeAll(polygonSidesPreviewDots);
-                                
-                                //Calcola il bounding box del poligono
-                                currentPolygon.computeBoundingBox();
-
-                                Command insertCmd = new InsertShapeCommand(currentPolygon, drawShapes, drawingPane);
-                                commandHistory.executeCommand(insertCmd);
-                                commandHistory.push(insertCmd);
-
-                                // Reset stato
-                                isDrawingPolygon = false;
-                                selectedShapeType = null;
-                                polygonButton.setSelected(false);
-                                currentPolygon = null;
-                                polygonSidesPreviewDots.clear();
-                            }
-                        }
-                        e.consume();
-                    }else{
-                    
-                    previewHandler.handleMousePressed(e);
-                }
-            }
-            
+                shapeButtonHandler.handleMousePressed(e, commandHistory, drawShapes);
         });
 
-        //Trascinamento mouse
         drawingPane.setOnMouseDragged(e -> {
-            //selectionHandler.onMouseDragged(e);
-            if (selectedShapeType != null && !"TEXT".equals(selectedShapeType) && !"POLYGON".equals(selectedShapeType)) {
-                previewHandler.handleMouseDragged(e, selectedShapeType, drawingPane);
-                drawingPaneSizeDynamicUpdate(drawingPane);
-            }
+            shapeButtonHandler.handleMouseDragged(e);
+            drawingPaneSizeDynamicUpdate(drawingPane);
         });
 
-        //Rilascio del mouse
         drawingPane.setOnMouseReleased(e -> {
-            //selectionHandler.onMouseReleased(e, drawShapes, drawingPane);
-            if (selectedShapeType != null && !"TEXT".equals(selectedShapeType) && !"POLYGON".equals(selectedShapeType)) {
-                Shape s = previewHandler.handleMouseReleased(e, selectedShapeType, drawingPane,
-                        colorHandler.getPerimetralColor(), colorHandler.getFillingColor());
-
-                Command insertCmd = new InsertShapeCommand(s, drawShapes, drawingPane);
-                insertCmd.execute();
-                commandHistory.push(insertCmd);
-            }
+            shapeButtonHandler.handleMouseReleased(e, commandHistory, drawShapes);
         });
 
         /**
@@ -294,12 +238,12 @@ public class FXMLDocumentController implements Initializable {
             shapeMenu.hide();
             canvasMenu.hide();
 
-            // Gestione selezione
-            if( event.getButton()== MouseButton.PRIMARY){
-            selectionHandler.handleSelection(event, drawShapes, drawingPane);
-            }
-            // Dopo la selezione, se è tasto destro...
-            else if (event.getButton() == MouseButton.SECONDARY) {
+            if (event.getButton() == MouseButton.PRIMARY) {
+                // Solo se nessuna forma è selezionata = modalità selezione
+                if (!shapeButtonHandler.isShapeSelected()) {
+                    selectionHandler.handleSelection(event, drawShapes, drawingPane);
+                }
+            } else if (event.getButton() == MouseButton.SECONDARY) {
                 if (selectionHandler.getSelectedShape() != null) {
                     updateLayerMenuItems();
                     shapeMenu.show(drawingPane, event.getScreenX(), event.getScreenY());
@@ -344,57 +288,19 @@ public class FXMLDocumentController implements Initializable {
     }
 
     @FXML
-    private void selectRectangle(ActionEvent event) {
+    private void selectShapeButton(ActionEvent event) {
         if (rectangleButton1.isSelected()) {
-            selectedShapeType = "RECTANGLE";
+            shapeButtonHandler.selectShape(ShapeType.RECTANGLE);
+        } else if (ellipseButton1.isSelected()) {
+            shapeButtonHandler.selectShape(ShapeType.ELLIPSE);
+        } else if (lineButton1.isSelected()) {
+            shapeButtonHandler.selectShape(ShapeType.LINE);
+        } else if (polygonButton.isSelected()) {
+            shapeButtonHandler.selectShape(ShapeType.POLYGON);
+        } else if (textButton1.isSelected()) {
+            shapeButtonHandler.selectShape(ShapeType.TEXT);
         } else {
-            selectedShapeType = null;
-        }
-    }
-
-    @FXML
-    private void selectEllipse(ActionEvent event) {
-        if (ellipseButton1.isSelected()) {
-            selectedShapeType = "ELLIPSE";
-        } else {
-            selectedShapeType = null;
-        }
-    }
-
-    @FXML
-    private void selectLine(ActionEvent event) {
-        if (lineButton1.isSelected()) {
-            selectedShapeType = "LINE";
-        } else {
-            selectedShapeType = null;
-        }
-    }
-    
-    @FXML
-    private void selectText(ActionEvent event) {
-        if (textButton1.isSelected()) {
-            selectedShapeType = "TEXT";
-        } else {
-            selectedShapeType = null;
-        }
-    }
-    
-    @FXML
-    private void selectPolygon(ActionEvent event) {
-        if (polygonButton.isSelected()) {
-            selectedShapeType = "POLYGON";
-            drawingPane.setCursor(Cursor.CROSSHAIR);
-            polygonTooltip = new Tooltip("Clicca per aggiungere punti. Clicca vicino al punto iniziale per chiudere.");
-            Tooltip.install(drawingPane, polygonTooltip);
-
-            currentPolygon = (IrregularPolygonShape) shapeFactory.createShape(selectedShapeType, 0, 0, 0, 0, colorHandler.getPerimetralColor(), colorHandler.getFillingColor());
-
-            polygonSidesPreviewDots.clear();
-            isDrawingPolygon = true;
-
-        } else {
-            cancelPolygonDrawing();
-            selectedShapeType = null;
+            shapeButtonHandler.clearSelection();
         }
     }
 
@@ -872,75 +778,6 @@ public class FXMLDocumentController implements Initializable {
         zoomProperty.set(scale);
     }
     
-    private Optional<TextShape> StringDialog(MouseEvent e){
-        //Dialog per l'inserimento della stringa
-        Dialog<TextShape> dialog = new Dialog<>();
-        dialog.setTitle("Inserisci testo");
-        dialog.setHeaderText("Inserisci il testo e la dimensione del carattere");
-
-        //Pulsanti OK e Annulla
-        ButtonType okButtonType = new ButtonType("OK", ButtonBar.ButtonData.OK_DONE);
-        dialog.getDialogPane().getButtonTypes().addAll(okButtonType, ButtonType.CANCEL);
-
-        //Textfield per testo e fontSize
-        TextField textField = new TextField("Testo");
-        TextField fontSizeField = new TextField("20");
-
-        //Layour del dialog
-        GridPane grid = new GridPane();
-        grid.setHgap(10);
-        grid.setVgap(10);
-        grid.setPadding(new Insets(20, 150, 10, 10));
-
-        grid.add(new Label("Testo:"), 0, 0);
-        grid.add(textField, 1, 0);
-        grid.add(new Label("Dimensione carattere:"), 0, 1);
-        grid.add(fontSizeField, 1, 1);
-
-        dialog.getDialogPane().setContent(grid);
-        
-        //Gestione risultato (quindi creazione della stringa)
-        dialog.setResultConverter(dialogButton -> {
-            if (dialogButton == okButtonType) {
-                try {
-                    String content = textField.getText();
-                    double fontSize = Double.parseDouble(fontSizeField.getText());
-                    if (fontSize <= 0 || fontSize > 200) {
-                        showError("La dimensione del font deve essere tra 1 e 200.");
-                    return null;
-                }                               
-                
-                TextShape s = new TextShape(content, e.getX(), e.getY());
-                s.setFontSize(fontSize);
-                s.setPerimetralColor(colorHandler.getPerimetralColor());
-                s.setInternalColor(colorHandler.getFillingColor());
-                s.setFXShape(s.toFXShape());
-                
-                //Controlla che la stringa non sfori il top della canvas
-                s.checkHeight();
-                
-                return s;
-                } catch (NumberFormatException ex) {
-                    return null;
-                    }
-                }
-            return null;
-        });
-        
-        
-        
-        
-        return dialog.showAndWait();
-    }
-
-    private void showError(String msg) {
-        Alert alert = new Alert(Alert.AlertType.ERROR);
-        alert.setTitle("Errore");
-        alert.setHeaderText(null);
-        alert.setContentText(msg);
-        alert.showAndWait();
-    }
-
     private void cancelPolygonDrawing() {
         if (isDrawingPolygon) {
             drawingPane.getChildren().removeAll(polygonSidesPreviewDots);
