@@ -4,11 +4,19 @@
  */
 package Shapes;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
 import java.io.Serializable;
+import javafx.geometry.Bounds;
+import javafx.scene.Group;
+import javafx.scene.Scene;
 import javafx.scene.control.TextArea;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
+import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Scale;
+import javafx.scene.transform.Transform;
 
 /**
  *
@@ -18,7 +26,12 @@ public class TextShape extends Shape implements Serializable {
 
     private String textContent; // Contenuto testuale della forma
     private double fontSize;    // Dimensione del testo
-
+    private double baseX;       //Angolo in basso a sinistra (start della stringa)
+    private double baseY;
+    private double stretchX = 1;
+    private double stretchY = 1;
+    private double originalWidth = -1;
+    private double originalHeight = -1;
     /**
      * Costruttore per una forma testuale.
      *
@@ -27,7 +40,7 @@ public class TextShape extends Shape implements Serializable {
      * @param initialY Coordinata Y di inserimento del testo
      */
     public TextShape(String text, double initialX, double initialY) {
-        super(initialX, initialY, initialX,initialY); // finalX/finalY sono inutili qui, ma richiesti dalla superclasse
+        super(initialX, initialY,0,0);
         this.textContent = text;
         this.fontSize = 20.0; // default
     }
@@ -45,6 +58,7 @@ public class TextShape extends Shape implements Serializable {
         text.setFill(Color.valueOf(internalColorString));     // colore di riempimento
         applyTransformsToNode(text);
         return text;
+        
     }
 
     /**
@@ -68,7 +82,14 @@ public class TextShape extends Shape implements Serializable {
         copy.fontSize = this.fontSize;
         copy.perimetralColorString = this.perimetralColorString;
         copy.internalColorString = this.internalColorString;
-        
+        copy.baseX = baseX;
+        copy.baseY = baseY;
+        copy.finalX = finalX;
+        copy.finalY = finalY;
+        copy.stretchX = stretchX;
+        copy.stretchY = stretchY;
+        copy.originalWidth = originalWidth;
+        copy.originalHeight = originalHeight;
         copy.rotation = this.rotation;
         copy.mirrorX  = this.mirrorX;
         copy.mirrorY  = this.mirrorY;
@@ -85,17 +106,6 @@ public class TextShape extends Shape implements Serializable {
 
 
 
-    /**
-     * Ridimensionamento: non applicabile direttamente al testo.
-     * 
-     */
-    //(almeno per adesso)
-    //Da vedere poi per la stretch se useremo sempre resize o altra funzione
-    
-    public void resize(double newWidth, double newHeight) {
-        // Il testo non viene ridimensionato geometricamente.
-        // La dimensione è controllata dal fontSize (vedi setFontSize()).
-    }
 
     // Getter e Setter per il contenuto e la dimensione del testo
     public String getTextContent() {
@@ -121,6 +131,38 @@ public class TextShape extends Shape implements Serializable {
             textNode.setFont(Font.font(size));
         }
     }
+
+    public double getBaseX() {
+        return baseX;
+    }
+
+    public void setBaseX(double baseX) {
+        this.baseX = baseX;
+    }
+
+    public double getBaseY() {
+        return baseY;
+    }
+
+    public void setBaseY(double baseY) {
+        this.baseY = baseY;
+    }
+    
+    public double getOriginalWidth() {
+        return originalWidth;
+    }
+    
+    public double getOriginalHeight() {
+        return originalHeight;
+    }
+    
+    public void setStretchX(double stretchX) {
+        this.stretchX = stretchX;
+    }
+    
+    public void setStretchY(double stretchY) {
+        this.stretchY = stretchY;
+    }
     
     public void checkHeight(){
         double baseline = initialY;
@@ -133,5 +175,72 @@ public class TextShape extends Shape implements Serializable {
             fxText.setY(newBaseline);
         }
     }
-}
+    
+    @Override
+    public double getWidth() {
+        return Math.abs(finalX - baseX);
+    }
+    @Override
+    public double getHeight() {
+        return Math.abs(baseY - finalY);
+    }
+    
+    public void computeBoundingBox(Text textShape) {
+        Bounds bounds = textShape.localToParent(textShape.getLayoutBounds());
+        this.baseX = bounds.getMinX();
+        this.baseY = bounds.getMaxY();
+        this.finalX = bounds.getMaxX();
+        this.finalY = bounds.getMinY();
 
+        if (originalWidth < 0 || originalHeight < 0) {
+            this.originalWidth = bounds.getWidth();
+            this.originalHeight = bounds.getHeight();
+        }
+    }
+
+
+
+    /* --------------------------------------------------------------------- */
+    /** Ricompone scala → mirror → rotazione usando il centro attuale. */
+    protected void applyTransformsToNode(javafx.scene.shape.Shape node) {
+        node.getTransforms().clear();
+
+        Bounds b = node.getLayoutBounds();
+        double cx = (b.getMinX() + b.getMaxX()) / 2.0;
+        double cy = (b.getMinY() + b.getMaxY()) / 2.0;
+
+        // ─── Fattori di scala coerenti con la rotazione ───
+        double scaleX = stretchX;
+        double scaleY = stretchY;
+
+        // Se la rotazione è "verticale" (90° o 270°), scambiare gli assi
+        if ((rotation % 180) != 0) {
+            double tmp = scaleX;
+            scaleX = scaleY;
+            scaleY = tmp;
+        }
+    
+        //Trasformazione temporanea utile al calcolo del bounding box (viene poi eliminata)
+        if (stretchX != 1 || stretchY != 1)
+                node.getTransforms().add(new Scale(stretchX, stretchY, cx, cy));
+            // Calcola bounding box senza rotazione e specchiatura
+            computeBoundingBox((Text) node);
+            node.getTransforms().clear();
+        
+        
+        //Trasformazione (stretch) effettivamente applicata
+        if (scaleX != 1 || scaleY != 1)
+            node.getTransforms().add(new Scale(scaleX, scaleY, cx, cy));
+        
+        // ─── rotazione ───────── (non specchio!)
+        if (rotation != 0)
+            node.getTransforms().add(new Rotate(rotation, cx, cy));
+
+        // ─── mirror (dopo bounding box) ───
+        if (mirrorX || mirrorY)
+            node.getTransforms().add(
+                new Scale(mirrorX ? -1 : 1, mirrorY ? -1 : 1, cx, cy));
+    }
+    
+    
+}

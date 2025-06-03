@@ -8,6 +8,7 @@ import javafx.scene.paint.Color;
 import java.util.Collections;
 import java.util.stream.Collectors;
 import Shapes.IrregularPolygonShape;
+import Shapes.TextShape;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Polygon;
@@ -113,7 +114,7 @@ public class DrawingReceiver {
             polygon.setPolygonPoints(resizedPoints);
             polygon.computeBoundingBox();
             
-            // Update the existing polygon points instead of creating a new shape
+            // Aggiorna i punti esistenti del poligono invece di creare una nuova forma
             Polygon fxPolygon = (Polygon) shape.getFXShape();
             if (fxPolygon != null) {
                 fxPolygon.getPoints().clear();
@@ -123,8 +124,25 @@ public class DrawingReceiver {
                 fxPolygon.setStroke(shape.getPerimetralColor());
                 fxPolygon.setFill(shape.getInternalColor());
             }
+        } else if (shape instanceof TextShape) {
+            TextShape textShape = (TextShape) shape;
+            double originalWidth = textShape.getOriginalWidth();
+            double originalHeight = textShape.getOriginalHeight();
+            
+            if (originalWidth <= 0 || originalHeight <= 0) return;
+
+            textShape.setStretchX(width / originalWidth);
+            textShape.setStretchY(height / originalHeight);
+
+            // Crea e imposta una nuova forma di testo con le trasformazioni aggiornate
+            javafx.scene.text.Text newText = textShape.toFXShape();
+            textShape.setFXShape(newText);
+            textShape.computeBoundingBox(newText);
+            
+            // Aggiorna la rappresentazione visiva
+            updateShapeVisual(shape);
         } else {
-            // Aggiorna le coordinate logiche
+            // Gestione delle altre forme
             shape.setFinalX(shape.getInitialX() + width);
             shape.setFinalY(shape.getInitialY() + height);
             updateShapeVisual(shape);
@@ -174,6 +192,11 @@ public class DrawingReceiver {
             }
             polygon.setPolygonPoints(movedPoints);
             polygon.computeBoundingBox();
+        } else if (shape instanceof TextShape) {
+            TextShape textShape = (TextShape) shape;
+            // Update text-specific coordinates
+            textShape.setBaseX(textShape.getBaseX() + dx);
+            textShape.setBaseY(textShape.getBaseY() + dy);
         }
         
         // Update logical coordinates for all shapes
