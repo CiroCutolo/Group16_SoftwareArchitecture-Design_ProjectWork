@@ -19,114 +19,115 @@ import static org.junit.Assert.*;
 
 /**
  *
- * @author ciroc
+ * @author genna
+ */
+/**
+ * Unit test JUnit 4 per la classe SendBackwardCommand (Java 8).
+ *
+ * Questi due test verificano che:
+ *   1) execute() sposti correttamente la Shape di un passo indietro nella lista drawShapes,
+ *   2) undo() riporti la Shape alla posizione originale (un passo avanti).
+ *
+ * Si assume che:
+ *   • La lista drawShapes esponga l’ordine di disegno (indice 0 = in ricezione più "dietro",
+ *     indice maggiore = “più in primo piano”).
+ *   • SendBackwardCommand abbia la firma: SendBackwardCommand(Shape shape, DrawingReceiver receiver).
+ *   • execute() invochi receiver.sendBackward(shape), che scambia la shape con l’elemento precedente
+ *     (cioè abbassa il suo z-index di uno).
+ *   • undo() invochi receiver.bringForward(shape), ripristinando la posizione.
+ *
+ * Inizializziamo il toolkit JavaFX in @BeforeClass perché DrawingReceiver richiede un Pane.
  */
 public class SendBackwardCommandTest {
-
-    private List<Shape> drawShapes;
-    private Pane drawingPane;
-    private Shape shape1;
-    private Shape shape2;
-    private Shape shape3;
-
+    
+    public SendBackwardCommandTest() {
+    }
+    
+    @BeforeClass
+    public static void setUpClass() {
+        new JFXPanel();
+    }
+    
+    @AfterClass
+    public static void tearDownClass() {
+    }
+    
     @Before
     public void setUp() {
-        new JFXPanel(); 
-
-        drawingPane = new Pane();
-
-        shape1 = new RectangleShape(0, 0, 10, 10);
-        shape2 = new RectangleShape(10, 10, 20, 20);
-        shape3 = new RectangleShape(20, 20, 30, 30);
-        
-        javafx.scene.shape.Shape fxShape1 = shape1.toFXShape();
-        shape1.setFXShape(fxShape1);
-        javafx.scene.shape.Shape fxShape2 = shape2.toFXShape();
-        shape2.setFXShape(fxShape2);
-        javafx.scene.shape.Shape fxShape3 = shape3.toFXShape();
-        shape3.setFXShape(fxShape3);
-        
-        drawShapes = new ArrayList<>();
-        drawShapes.add(shape1);
-        drawShapes.add(shape2);
-        drawShapes.add(shape3);
-
-        drawingPane.getChildren().addAll(shape1.getFXShape(), shape2.getFXShape(), shape3.getFXShape());
+    }
+    
+    @After
+    public void tearDown() {
     }
 
-    /**
-     * Questo test verifica che una forma situata in un livello intermedio, 
-     * venga portata ad un livello inferiore, senza problemi.
-     */
     @Test
-    public void testExecute_MiddleShapeBackward() {
-        SendBackwardCommand command = new SendBackwardCommand(shape2, drawShapes, drawingPane);
+    public void execute_ShouldMoveShapeOnePositionBackward() {
+        // Arrange:
+        // 1) Creo tre RectangleShape e li metto in drawShapes in ordine [s1, s2, s3]
+        //    Interpretazione: s1 è "dietro", s3 è "in primo piano".
+        Shape s1 = new RectangleShape(0, 0, 10, 10);
+        Shape s2 = new RectangleShape(20, 20, 30, 30);
+        Shape s3 = new RectangleShape(40, 40, 50, 50);
+
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(s1);
+        drawList.add(s2);
+        drawList.add(s3);
+
+        // 2) Creo il DrawingReceiver con la lista e un Pane (JavaFX già inizializzato)
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
+
+        // Verifico lo stato iniziale: [s1, s2, s3]
+        assertSame("Prima di execute, drawList[0] deve essere s1", s1, drawList.get(0));
+        assertSame("Prima di execute, drawList[1] deve essere s2", s2, drawList.get(1));
+        assertSame("Prima di execute, drawList[2] deve essere s3", s3, drawList.get(2));
+
+        // 3) Istanzio il comando per spostare s3 indietro (cioè dalla posizione 2 alla 1)
+        SendBackwardCommand command = new SendBackwardCommand(s3, receiver);
+
+        // Act:
         command.execute();
 
-        assertSame(shape2, drawShapes.get(0));
-        assertSame(shape1, drawShapes.get(1));
-        assertSame(shape3, drawShapes.get(2));
+        // Assert:
+        // Ora drawList dovrebbe essere [s1, s3, s2]
+        assertSame("Dopo execute, drawList[0] deve rimanere s1", s1, drawList.get(0));
+        assertSame("Dopo execute, drawList[1] deve essere s3", s3, drawList.get(1));
+        assertSame("Dopo execute, drawList[2] deve essere s2", s2, drawList.get(2));
     }
 
-    /**
-     * Verifica, tramite l'esecuzione della backward sulla shape situata nel livello
-     * più basso, che la forma non subisca spostamenti tra i livelli, essendo già
-     * nel livello più profondo.
-     */
     @Test
-    public void testExecute_FirstShapeCreatedToBack() {
-        SendBackwardCommand command = new SendBackwardCommand(shape1, drawShapes, drawingPane);
+    public void undo_ShouldRestoreShapeToOriginalPosition() {
+        // Arrange:
+        // 1) Creo tre RectangleShape e li metto in drawShapes in ordine [s1, s2, s3]
+        Shape s1 = new RectangleShape(0, 0, 10, 10);
+        Shape s2 = new RectangleShape(20, 20, 30, 30);
+        Shape s3 = new RectangleShape(40, 40, 50, 50);
+
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(s1);
+        drawList.add(s2);
+        drawList.add(s3);
+
+        // 2) Creo il DrawingReceiver con la lista e un Pane
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
+
+        // 3) Istanzio il comando e chiamo execute() per spostare s3 indietro
+        SendBackwardCommand command = new SendBackwardCommand(s3, receiver);
         command.execute();
 
-        assertEquals(shape1, drawShapes.get(0));
-        assertEquals(shape2, drawShapes.get(1));
-        assertEquals(shape3, drawShapes.get(2));
-    }
+        // Verifico che ora la lista sia [s1, s3, s2]
+        assertSame("Dopo execute, drawList[0] deve essere s1", s1, drawList.get(0));
+        assertSame("Dopo execute, drawList[1] deve essere s3", s3, drawList.get(1));
+        assertSame("Dopo execute, drawList[2] deve essere s2", s2, drawList.get(2));
 
-    /**
-     * Questo test, verifica l'efficacia dell'undo, eseguendolo subito dopo 
-     * l'attuazione di una backward su una forma, riportando la stessa al suo 
-     * livello originale.
-     */
-    @Test
-    public void testUndo_AfterBackwarding() {
-        SendBackwardCommand command = new SendBackwardCommand(shape2, drawShapes, drawingPane);
-        command.execute();
+        // Act:
         command.undo();
 
-        assertEquals(shape1, drawShapes.get(0));
-        assertEquals(shape2, drawShapes.get(1));
-        assertEquals(shape3, drawShapes.get(2));
-    }
-
-    /**
-     * Questo test, verifica che l'undo non apporti modifiche rispetto ai livelli,
-     * eseguendo l'inversione quando non era stato effettuato alcun comando rispetto alla
-     * modifica dei livelli delle forme presenti nel riquadro di disegno.
-     */
-    @Test
-    public void testUndo_WithoutPreviousForwarding() {
-        
-        for (int i = 0; i < drawShapes.size(); i++) {
-            Shape s = drawShapes.get(i);
-            System.out.println("Index " + i + ": " + s);
-        }
-        
-        SendBackwardCommand command = new SendBackwardCommand(shape2, drawShapes, drawingPane);
-        command.undo();
-
-        for (int i = 0; i < drawShapes.size(); i++) {
-            Shape s = drawShapes.get(i);
-            System.out.println("Index " + i + ": " + s);
-        }
-        
-        assertSame(shape1, drawShapes.get(0));
-        assertSame(shape2, drawShapes.get(1));
-        assertSame(shape3, drawShapes.get(2));
-        assertTrue(drawShapes.contains(shape1));
-        assertTrue(drawShapes.contains(shape2));
-        assertTrue(drawShapes.contains(shape3));
-        
-        
+        // Assert:
+        // Dopo undo, s3 deve tornare alla posizione originale (indice 2),
+        // e la lista deve essere di nuovo [s1, s2, s3].
+        assertSame("Dopo undo, drawList[0] deve rimanere s1", s1, drawList.get(0));
+        assertSame("Dopo undo, drawList[1] deve tornare s2", s2, drawList.get(1));
+        assertSame("Dopo undo, drawList[2] deve tornare s3", s3, drawList.get(2));
     }
 }

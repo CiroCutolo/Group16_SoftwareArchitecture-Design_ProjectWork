@@ -1,12 +1,13 @@
 /*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
+ * Click nbfs://nbhost/SystemFileSystem/Templates/Licenses/license-default.txt to change this license
+ * Click nbfs://nbhost/SystemFileSystem/Templates/UnitTests/JUnit4TestClass.java to edit this template
  */
 package Command;
 
 import Shapes.RectangleShape;
 import Shapes.Shape;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.layout.Pane;
 import org.junit.After;
@@ -17,118 +18,115 @@ import org.junit.Test;
 import static org.junit.Assert.*;
 
 /**
- * Classe di test per RotateCommand.
- * Verifica l'esecuzione e l'annullamento della rotazione di una forma.
- * 
- * @author gaetanof
+ *
+ * @author genna
+ */
+/**
+ * Questi due test verificano che:
+ *   1) execute() ruoti correttamente la Shape di un angolo specificato,
+ *   2) undo() ripristini la rotazione originale (cioè ruoti di -angle).
+ *
+ * Si assume che:
+ *   • RectangleShape abbia di default rotation = 0.
+ *   • RotateCommand abbia la firma: RotateCommand(Shape shape, double angle, DrawingReceiver receiver).
+ *   • execute() invochi receiver.rotateShape(shape, angle), il quale chiama
+ *       shape.setRotation((shape.getRotation() + angle) % 360).
+ *   • undo() invochi receiver.rotateShape(shape, -angle).
  */
 public class RotateCommandTest {
-
-    private Shape shape;                       // Oggetto forma da ruotare
-    private javafx.scene.shape.Shape fxShape;  // Controparte JavaFX della forma
-
+    
     public RotateCommandTest() {
     }
-
+    
     @BeforeClass
     public static void setUpClass() {
-        // Inizializza il toolkit JavaFX (necessario in modalità headless per i test)
-        new JFXPanel();
     }
-
+    
     @AfterClass
     public static void tearDownClass() {
-        // Nessuna azione necessaria dopo tutti i test
     }
-
+    
     @Before
     public void setUp() {
-        // Crea un rettangolo semplice per effettuare i test
-        shape = new RectangleShape(0, 0, 10, 10);
-        fxShape = shape.toFXShape();
-        shape.setFXShape(fxShape);
-
-        // Aggiunta della forma a un contenitore (non strettamente necessario per questi test)
-        new Pane().getChildren().add(fxShape);
+        new JFXPanel();
     }
-
+    
     @After
     public void tearDown() {
-        // Pulizia dopo ogni test, se necessario
     }
 
-    /**
-     * Test del metodo execute con una rotazione di 90 gradi.
-     * Verifica che la forma venga ruotata dell’angolo specificato.
-     */
     @Test
-    public void testExecute90Degrees() {
-        System.out.println("Testing execute() con rotazione di 90 gradi");
-        double angle = 90.0;
-        RotateCommand instance = new RotateCommand(shape, angle);
+    public void execute_ShouldRotateShapeByGivenAngle() {
+        // Arrange:
+        // 1) Creo una RectangleShape e mi aspetto rotazione iniziale = 0
+        Shape rect = new RectangleShape(0, 0, 10, 10);
+        assertEquals("Rotazione di default deve essere 0", 0.0, rect.getRotation(), 0.0);
 
-        // La rotazione iniziale dovrebbe essere 0
-        assertEquals(0.0, shape.getRotation(), 0.001);
+        // 2) Aggiungo la shape a un drawList e creo il DrawingReceiver (serve un Pane JavaFX)
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(rect);
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
 
-        // Esecuzione della rotazione
-        instance.execute();
-
-        // Verifica che la rotazione sia esattamente 90 gradi
-        assertEquals(90.0, shape.getRotation(), 0.001);
-    }
-
-    /**
-     * Test del metodo execute con rotazioni multiple.
-     * Verifica che le rotazioni si accumulino correttamente.
-     */
-    @Test
-    public void testMultipleRotations() {
-        System.out.println("Testing rotazioni multiple");
-
-        // Prima rotazione di 45 gradi
-        RotateCommand rotation1 = new RotateCommand(shape, 45.0);
-        rotation1.execute();
-        assertEquals(45.0, shape.getRotation(), 0.001);
-
-        // Seconda rotazione di 45 gradi (totale atteso: 90)
-        RotateCommand rotation2 = new RotateCommand(shape, 45.0);
-        rotation2.execute();
-        assertEquals(90.0, shape.getRotation(), 0.001);
-    }
-
-    /**
-     * Test del metodo undo.
-     * Verifica che l’annullamento ripristini correttamente la rotazione.
-     */
-    @Test
-    public void testUndo() {
-        System.out.println("Testing undo()");
-
+        // 3) Definisco un angolo di rotazione, ad esempio 45 gradi
         double angle = 45.0;
-        RotateCommand instance = new RotateCommand(shape, angle);
 
-        // Esegue la rotazione
-        instance.execute();
-        assertEquals(45.0, shape.getRotation(), 0.001);
+        // 4) Istanzio il RotateCommand con la firma corretta
+        RotateCommand command = new RotateCommand(rect, angle, receiver);
 
-        // Annulla la rotazione
-        instance.undo();
-        assertEquals(0.0, shape.getRotation(), 0.001);
+        // Act:
+        command.execute();
+
+        // Assert:
+        // Dopo execute(), il metodo rotateShape avrà chiamato shape.setRotation((0 + 45) % 360) = 45
+        assertEquals("Dopo execute, rotation deve essere 45 gradi",
+                     45.0, rect.getRotation(), 0.0);
+
+        // 5) Se eseguo di nuovo execute() (rotazione aggiuntiva), la rotazione diventa (45 + 45) % 360 = 90
+        command.execute();
+        assertEquals("Seconda esecuzione: rotation deve essere (45 + 45) % 360 = 90",
+                     90.0, rect.getRotation(), 0.0);
     }
 
-    /**
-     * Test della normalizzazione dell’angolo di rotazione.
-     * Verifica che una rotazione superiore a 360 gradi venga normalizzata.
-     */
     @Test
-    public void testRotationNormalization() {
-        System.out.println("Testing normalizzazione della rotazione");
+    public void undo_ShouldRestoreOriginalRotation() {
+        // Arrange:
+        // 1) Creo una RectangleShape e mi aspetto rotazione iniziale = 0
+        Shape rect = new RectangleShape(0, 0, 10, 10);
+        assertEquals("Rotazione di default deve essere 0", 0.0, rect.getRotation(), 0.0);
 
-        // Rotazione di 400 gradi (atteso: 40 gradi)
-        RotateCommand instance = new RotateCommand(shape, 400.0);
-        instance.execute();
+        // 2) Aggiungo la shape a un drawList e creo il DrawingReceiver
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(rect);
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
 
-        // La rotazione dovrebbe essere normalizzata a 40 gradi
-        assertEquals(40.0, shape.getRotation(), 0.001);
+        // 3) Definisco un angolo di rotazione (ad esempio 100°) e creo il comando
+        double angle = 100.0;
+        RotateCommand command = new RotateCommand(rect, angle, receiver);
+
+        // 4) Eseguo execute() per ruotare la shape di 100°; ora rotation == 100
+        command.execute();
+        assertEquals("Dopo execute, rotation deve essere 100°",
+                     100.0, rect.getRotation(), 0.0);
+
+        // Act:
+        command.undo();
+
+        // Assert:
+        // Undo invoca receiver.rotateShape(shape, -100), quindi la rotazione diventa (100 + (-100)) % 360 = 0
+        assertEquals("Dopo undo, rotation deve essere tornato a 0",
+                     0.0, rect.getRotation(), 0.0);
+
+        // 5) Verifico che se ripeto execute() + undo() con un angolo superiore a 360,
+        //    il modulo 360 venga rispettato. Ad esempio angle2 = 370°:
+        double angle2 = 370.0;
+        // in questo caso, (0 + 370) % 360 = 10
+        RotateCommand command2 = new RotateCommand(rect, angle2, receiver);
+        command2.execute();
+        assertEquals("Dopo execute con 370°, rotation deve essere (0 + 370) % 360 = 10",
+                     10.0, rect.getRotation(), 0.0);
+        command2.undo();
+        // Undo applica rotateShape(shape, -370): (10 + (-370)) % 360 = -360 % 360 = 0
+        assertEquals("Dopo undo, rotation deve essere tornato a 0",
+                     0.0, rect.getRotation(), 0.0);
     }
 }

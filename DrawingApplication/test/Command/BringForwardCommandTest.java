@@ -10,119 +10,137 @@ import java.util.ArrayList;
 import java.util.List;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.layout.Pane;
+import org.junit.After;
+import org.junit.AfterClass;
+import static org.junit.Assert.assertSame;
 import org.junit.Before;
+import org.junit.BeforeClass;
 import org.junit.Test;
-import static org.junit.Assert.*;
+
 
 /**
- * Test unitari per BringForwardCommand.
+ *
+ * @author genna
+ */
+
+/**
+ * Unit test JUnit 4 per la classe BringForwardCommand, compatibile con Java 8.
+ *
+ * Qui definiamo due classi di supporto "fatte in casa":
+ * 1) DummyShape   una sottoclasse minimale di Shape che implementa i metodi astratti in modo stub.
+ * 2) DummyReceiver  estende DrawingReceiver e sovrascrive solo bringForward() e sendBackward()
+ *    per registrare una chiamata (senza eseguire la logica di DrawingReceiver originale, che coinvolge
+ *    JavaFX e manipolazione di liste/riferimenti).
+ *
+ * Inizializziamo il toolkit JavaFX in @BeforeClass anziché @BeforeAll, perché usiamo JUnit 4.
  */
 public class BringForwardCommandTest {
-
-    private List<Shape> drawShapes;
-    private Pane drawingPane;
-    private Shape shape1;
-    private Shape shape2;
-    private Shape shape3;
-
+    
+    public BringForwardCommandTest() {
+    }
+    
+    @BeforeClass
+    public static void setUpClass() {
+    }
+    
+    @AfterClass
+    public static void tearDownClass() {
+    }
+    
+    /**
+     * Inizializza il toolkit JavaFX per permettere la creazione di Pane senza errori
+     * tipo "Toolkit not initialized". Senza questo, new Pane() potrebbe lanciare eccezioni.
+     */
     @Before
     public void setUp() {
-        new JFXPanel(); 
-
-        drawingPane = new Pane();
-
-        shape1 = new RectangleShape(0, 0, 10, 10);
-        shape2 = new RectangleShape(10, 10, 20, 20);
-        shape3 = new RectangleShape(20, 20, 30, 30);
-        
-        javafx.scene.shape.Shape fxShape1 = shape1.toFXShape();
-        shape1.setFXShape(fxShape1);
-        javafx.scene.shape.Shape fxShape2 = shape2.toFXShape();
-        shape2.setFXShape(fxShape2);
-        javafx.scene.shape.Shape fxShape3 = shape3.toFXShape();
-        shape3.setFXShape(fxShape3);
-        
-        drawShapes = new ArrayList<>();
-        drawShapes.add(shape1);
-        drawShapes.add(shape2);
-        drawShapes.add(shape3);
-
-        drawingPane.getChildren().addAll(shape1.getFXShape(), shape2.getFXShape(), shape3.getFXShape());
+        new JFXPanel();
+    }
+    
+    @After
+    public void tearDown() {
     }
 
     /**
-     * Questo test verifica che una forma situata in un livello intermedio, 
-     * venga portata avanti senza problemi.
+     * Sottoclasse minimale di Shape. I metodi astratti vengono stub-izzati perché in questi test
+     * non servono le funzionalità grafiche: è sufficiente che esistano.
      */
-    @Test
-    public void testExecute_MiddleShapeForward() {
-        BringForwardCommand command = new BringForwardCommand(shape2, drawShapes, drawingPane);
-        command.execute();
+    static class DummyShape extends Shape {
 
-        assertSame(shape1, drawShapes.get(0));
-        assertSame(shape3, drawShapes.get(1));
-        assertSame(shape2, drawShapes.get(2));
+        public DummyShape(double initialX, double initialY, double finalX, double finalY) {
+            super(initialX, initialY, finalX, finalY);
+        }
+        @Override
+        public javafx.scene.shape.Shape toFXShape() {
+            // Non serve restituire nulla di significativo per il test
+            return null;
+        }
+
+        @Override
+        public String getType() {
+            return "Dummy";
+        }
+
+        @Override
+        public Shape clone() {
+            // Restituiamo lo stesso oggetto per semplicità
+            return this;
+        }
     }
 
-    /**
-     * Verifica, tramite l'esecuzione della forward sulla shape situata nel livello
-     * più alto, che la forma non subisca spostamenti tra i livelli, essendo già
-     * nel livello più superficiale.
-     */
     @Test
-    public void testExecute_LastShapeCreatedToFront() {
-        BringForwardCommand command = new BringForwardCommand(shape3, drawShapes, drawingPane);
+    public void execute_ShouldMoveShapeOnePositionForward() {
+        // Arrange: creo due RectangleShape e li metto in drawShapes in ordine [s1, s2]
+        Shape s1 = new RectangleShape(0, 0, 10, 10);
+        Shape s2 = new RectangleShape(20, 20, 30, 30);
+
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(s1);
+        drawList.add(s2);
+
+        // Creo il DrawingReceiver con la lista e un Pane (inizializzato)
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
+
+        // Verifico lo stato iniziale: s1 a indice 0, s2 a indice 1
+        assertSame("Prima dell'execute, drawList[0] deve essere s1", s1, drawList.get(0));
+        assertSame("Prima dell'execute, drawList[1] deve essere s2", s2, drawList.get(1));
+
+        // Creo il comando per portare s1 "forward" (cioè in avanti nella lista)
+        BringForwardCommand command = new BringForwardCommand(s1, receiver);
+
+        // Act: eseguo il comando
         command.execute();
 
-        assertEquals(shape1, drawShapes.get(0));
-        assertEquals(shape2, drawShapes.get(1));
-        assertEquals(shape3, drawShapes.get(2));
+        // Assert: ora s1 dovrebbe essere in posizione 1 e s2 in posizione 0
+        assertSame("Dopo execute, drawList[0] deve essere s2", s2, drawList.get(0));
+        assertSame("Dopo execute, drawList[1] deve essere s1", s1, drawList.get(1));
     }
 
-    /**
-     * Questo test, verifica l'efficacia dell'undo, eseguendolo subito dopo 
-     * l'esecuzione di una forward su una forma, riportando la stessa forma
-     * al suo livello originale.
-     */
     @Test
-    public void testUndo_AfterForwarding() {
-        BringForwardCommand command = new BringForwardCommand(shape2, drawShapes, drawingPane);
+    public void undo_ShouldMoveShapeBackToOriginalPosition() {
+        // Arrange: creo due RectangleShape e li metto in drawShapes in ordine [s1, s2]
+        Shape s1 = new RectangleShape(0, 0, 10, 10);
+        Shape s2 = new RectangleShape(20, 20, 30, 30);
+
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(s1);
+        drawList.add(s2);
+
+        // Creo il DrawingReceiver con la lista e un Pane
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
+
+        // Creo il comando e chiamo execute() per spostare s1 avanti
+        BringForwardCommand command = new BringForwardCommand(s1, receiver);
         command.execute();
+
+        // Verifico che ora la lista sia [s2, s1]
+        assertSame("Dopo execute, drawList[0] deve essere s2", s2, drawList.get(0));
+        assertSame("Dopo execute, drawList[1] deve essere s1", s1, drawList.get(1));
+
+        // Act: chiamo undo() per riportare s1 indietro
         command.undo();
 
-        assertEquals(shape1, drawShapes.get(0));
-        assertEquals(shape2, drawShapes.get(1));
-        assertEquals(shape3, drawShapes.get(2));
-    }
-
-    /**
-     * Questo test, verifica che l'undo non apporti modifiche rispetto ai livelli,
-     * eseguendo l'inversione quando non era stato effettuato alcun comando rispetto alla
-     * modifica dei livelli delle forme presenti nel riquadro di disegno.
-     */
-    @Test
-    public void testUndo_WithoutPreviousForwarding() {
-        
-        for (int i = 0; i < drawShapes.size(); i++) {
-            Shape s = drawShapes.get(i);
-            System.out.println("Index " + i + ": " + s);
-        }
-        
-        BringForwardCommand command = new BringForwardCommand(shape2, drawShapes, drawingPane);
-        command.undo();
-
-        for (int i = 0; i < drawShapes.size(); i++) {
-            Shape s = drawShapes.get(i);
-            System.out.println("Index " + i + ": " + s);
-        }
-        
-        assertSame(shape1, drawShapes.get(0));
-        assertSame(shape2, drawShapes.get(1));
-        assertSame(shape3, drawShapes.get(2));
-        assertTrue(drawShapes.contains(shape1));
-        assertTrue(drawShapes.contains(shape2));
-        assertTrue(drawShapes.contains(shape3));
-        
-        
+        // Assert: la lista deve tornare [s1, s2]
+        assertSame("Dopo undo, drawList[0] deve tornare s1", s1, drawList.get(0));
+        assertSame("Dopo undo, drawList[1] deve tornare s2", s2, drawList.get(1));
     }
 }

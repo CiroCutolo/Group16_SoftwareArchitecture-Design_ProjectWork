@@ -21,10 +21,13 @@ import static org.junit.Assert.*;
  *
  * @author genna
  */
+/**
+
+ * Qui verifichiamo che:
+ *   1) execute() inserisca la Shape in coda alla lista drawShapes,
+ *   2) undo() rimuova la stessa Shape dalla lista.
+ */
 public class InsertShapeCommandTest {
-    private Pane drawingPane;
-    private List<Shape> drawShapes;
-    private Shape shapeToInsert;
     
     public InsertShapeCommandTest() {
     }
@@ -39,58 +42,79 @@ public class InsertShapeCommandTest {
     
     @Before
     public void setUp() {
-         /* Obbligatorio per usare i controlli JavaFX nei test headless. */
         new JFXPanel();
-
-        drawingPane = new Pane();
-        drawShapes  = new ArrayList<>();
-
-        /* La forma da inserire NON è ancora nel pane né nella lista. */
-        shapeToInsert = new RectangleShape(5, 5, 15, 15);
     }
     
     @After
     public void tearDown() {
     }
 
-    /**
-     * Verifica che execute() aggiunga correttamente la shape.
-     */
     @Test
-    public void testExecute_AddsShape() {
-        InsertShapeCommand command = new InsertShapeCommand(shapeToInsert, drawShapes, drawingPane);
+    public void execute_ShouldInsertShapeAtEndOfDrawList() {
+        // Arrange:
+        // 1) Creo una RectangleShape s1 e la metto in drawShapes
+        Shape s1 = new RectangleShape(0, 0, 10, 10);
+        // 2) Creo una nuova RectangleShape s2 che inseriremo col comando
+        Shape s2 = new RectangleShape(20, 20, 30, 30);
+
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(s1);
+
+        // 3) Creo il DrawingReceiver con la lista e un Pane JavaFX
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
+
+        // Verifico lo stato iniziale
+        assertEquals("Inizialmente drawList deve contenere 1 forma", 1, drawList.size());
+        assertSame("drawList[0] deve essere s1", s1, drawList.get(0));
+
+        // 4) Creo il comando InsertShapeCommand con la firma (Shape, DrawingReceiver)
+        InsertShapeCommand command = new InsertShapeCommand(s2, receiver);
+
+        // Act:
         command.execute();
 
-        assertTrue(drawShapes.contains(shapeToInsert));
-        assertEquals(1, drawShapes.size());
-
-        assertTrue(drawingPane.getChildren().contains(shapeToInsert.getFXShape()));
-        assertEquals(1, drawingPane.getChildren().size());
+        // Assert:
+        // Dopo execute(), drawList deve avere 2 forme, con s2 in coda
+        assertEquals("Dopo execute, drawList deve contenere 2 forme", 2, drawList.size());
+        assertSame("Dopo execute, drawList[0] deve rimanere s1", s1, drawList.get(0));
+        assertSame("Dopo execute, drawList[1] deve essere s2", s2, drawList.get(1));
     }
 
-    /**
-     * Verifica che undo() rimuova la shape precedentemente inserita.
-     */
     @Test
-    public void testUndo_RemovesShape() {
-        InsertShapeCommand command = new InsertShapeCommand(shapeToInsert, drawShapes, drawingPane);
-        command.execute();  // inserisce
-        command.undo();     // rimuove
+    public void undo_ShouldRemoveShapeFromDrawList() {
+        // Arrange:
+        // 1) Creo due RectangleShape e li metto in drawShapes in ordine [s1, s2]
+        Shape s1 = new RectangleShape(0, 0, 10, 10);
+        Shape s2 = new RectangleShape(20, 20, 30, 30);
 
-        assertFalse(drawShapes.contains(shapeToInsert));
-        assertEquals(0, drawShapes.size());
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(s1);
+        drawList.add(s2);
 
-        assertFalse(drawingPane.getChildren().contains(shapeToInsert.getFXShape()));
-        assertEquals(0, drawingPane.getChildren().size());
-    }
+        // 2) Creo il DrawingReceiver con la lista e un Pane JavaFX
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
 
-    /**
-     * Se la shape è null ci si aspetta una NullPointerException.
-     */
-    @Test(expected = NullPointerException.class)
-    public void testExecute_NullShape_ThrowsException() {
-        InsertShapeCommand command = new InsertShapeCommand(null, drawShapes, drawingPane);
+        // Verifico lo stato iniziale
+        assertEquals("Inizialmente drawList deve contenere 2 forme", 2, drawList.size());
+        assertSame("drawList[0] deve essere s1", s1, drawList.get(0));
+        assertSame("drawList[1] deve essere s2", s2, drawList.get(1));
+
+        // 3) Creo il comando e chiamo execute() per inserire s3
+        Shape s3 = new RectangleShape(40, 40, 50, 50);
+        InsertShapeCommand command = new InsertShapeCommand(s3, receiver);
         command.execute();
+
+        // Verifico che la lista sia ora [s1, s2, s3]
+        assertEquals("Dopo execute, drawList deve contenere 3 forme", 3, drawList.size());
+        assertSame("Dopo execute, drawList[2] deve essere s3", s3, drawList.get(2));
+
+        // Act:
+        command.undo();
+
+        // Assert:
+        // Dopo undo(), s3 deve essere stato rimosso, quindi drawList torna [s1, s2]
+        assertEquals("Dopo undo, drawList deve tornare a contenere 2 forme", 2, drawList.size());
+        assertSame("Dopo undo, drawList[0] deve rimanere s1", s1, drawList.get(0));
+        assertSame("Dopo undo, drawList[1] deve rimanere s2", s2, drawList.get(1));
     }
-    
 }

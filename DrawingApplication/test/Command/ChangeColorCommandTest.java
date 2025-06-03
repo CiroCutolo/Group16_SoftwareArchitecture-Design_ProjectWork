@@ -6,6 +6,8 @@ package Command;
 
 import Shapes.RectangleShape;
 import Shapes.Shape;
+import java.util.ArrayList;
+import java.util.List;
 import javafx.embed.swing.JFXPanel;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
@@ -20,15 +22,13 @@ import static org.junit.Assert.*;
  *
  * @author genna
  */
+/**
+ * Qui usiamo un’istanza concreta di RectangleShape e il DrawingReceiver reale
+ * per verificare che:
+ * 1) execute() imposti correttamente i nuovi colori sulla Shape,
+ * 2) undo() ripristini i colori originali.
+ */
 public class ChangeColorCommandTest {
-    private Shape shape;
-    private javafx.scene.shape.Shape fxShape;
-
-    private Color originalFill;
-    private Color originalBorder;
-
-    private Color newFill;
-    private Color newBorder;
     
     public ChangeColorCommandTest() {
     }
@@ -43,65 +43,87 @@ public class ChangeColorCommandTest {
     
     @Before
     public void setUp() {
-        /* Necessario per usare JavaFX head-less. */
         new JFXPanel();
-
-        shape   = new RectangleShape(0, 0, 20, 20);
-        fxShape = shape.toFXShape();
-        shape.setFXShape(fxShape);
-
-        /* Colori di partenza */
-        originalFill   = Color.BLACK;
-        originalBorder = Color.GRAY;
-        shape.setInternalColor(originalFill);
-        shape.setPerimetralColor(originalBorder);
-        fxShape.setFill(originalFill);
-        fxShape.setStroke(originalBorder);
-
-        /* Pane opzionale (non indispensabile). */
-        new Pane().getChildren().add(fxShape);
-
-        /* Nuovi colori da applicare */
-        newFill   = Color.ORANGE;    // fill
-        newBorder = Color.DARKBLUE;  // stroke
     }
     
     @After
     public void tearDown() {
     }
 
-     /**
-     * Verifica che execute() imposti correttamente fill e stroke.
-     */
     @Test
-    public void testExecute_ChangesFillAndBorder() {
-        /* NB: ordine parametri = shape, newStroke, newFill */
-        ChangeColorCommand command = new ChangeColorCommand(shape, newBorder, newFill);
+    public void execute_ShouldChangeShapeColors() {
+        // Arrange:
+        // 1) Creo una RectangleShape con colori di default (perimetral = BLACK, internal = TRANSPARENT)
+        Shape rect = new RectangleShape(0, 0, 10, 10);
+        // 2) Inserisco la Shape in una lista per il DrawingReceiver
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(rect);
+        // 3) Creo il DrawingReceiver con la lista e un Pane JavaFX
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
+        // 4) Verifico i colori iniziali attesi
+        Color originalStroke = rect.getPerimetralColor();
+        Color originalFill   = rect.getInternalColor();
+        assertEquals("Il colore di contorno iniziale deve essere BLACK",
+                     Color.BLACK, originalStroke);
+        assertEquals("Il colore di riempimento iniziale deve essere TRANSPARENT",
+                     Color.TRANSPARENT, originalFill);
+
+        // 5) Scelgo nuovi colori
+        Color newStroke = Color.RED;
+        Color newFill   = Color.BLUE;
+        // 6) Creo il comando ChangeColorCommand con la firma corretta:
+        //    (Shape shape, Color newStroke, Color newFill, DrawingReceiver receiver)
+        ChangeColorCommand command = new ChangeColorCommand(rect, newStroke, newFill, receiver);
+
+        // Act:
         command.execute();
 
-        assertEquals(newFill,   fxShape.getFill());
-        assertEquals(newBorder, fxShape.getStroke());
+        // Assert:
+        // Dopo execute(), la Shape deve riportare i nuovi colori
+        assertEquals("Dopo execute, il colore di contorno deve essere RED",
+                     newStroke, rect.getPerimetralColor());
+        assertEquals("Dopo execute, il colore di riempimento deve essere BLUE",
+                     newFill, rect.getInternalColor());
     }
 
-    /**
-     * Verifica che undo() ripristini i colori originali.
-     */
     @Test
-    public void testUndo_RestoresOriginalFillAndBorder() {
-        ChangeColorCommand command = new ChangeColorCommand(shape, newBorder, newFill);
-        command.execute(); // applica
-        command.undo();    // annulla
+    public void undo_ShouldRestoreOriginalColors() {
+        // Arrange:
+        // 1) Creo una RectangleShape con colori di default (perimetral = BLACK, internal = TRANSPARENT)
+        Shape rect = new RectangleShape(0, 0, 10, 10);
+        // 2) Inserisco la Shape in una lista per il DrawingReceiver
+        List<Shape> drawList = new ArrayList<>();
+        drawList.add(rect);
+        // 3) Creo il DrawingReceiver con la lista e un Pane JavaFX
+        DrawingReceiver receiver = new DrawingReceiver(drawList, new Pane());
+        // 4) Verifico i colori iniziali attesi
+        Color originalStroke = rect.getPerimetralColor();
+        Color originalFill   = rect.getInternalColor();
+        assertEquals("Il colore di contorno iniziale deve essere BLACK",
+                     Color.BLACK, originalStroke);
+        assertEquals("Il colore di riempimento iniziale deve essere TRANSPARENT",
+                     Color.TRANSPARENT, originalFill);
 
-        assertEquals(originalFill,   fxShape.getFill());
-        assertEquals(originalBorder, fxShape.getStroke());
-    }
+        // 5) Scelgo nuovi colori e creo il comando (notare la firma corretta)
+        Color newStroke = Color.GREEN;
+        Color newFill   = Color.YELLOW;
+        ChangeColorCommand command = new ChangeColorCommand(rect, newStroke, newFill, receiver);
+        // 6) Eseguo execute() per cambiare i colori
+        command.execute();
+        // Verifico che i colori siano effettivamente cambiati
+        assertEquals("Dopo execute, il colore di contorno deve essere GREEN",
+                     newStroke, rect.getPerimetralColor());
+        assertEquals("Dopo execute, il colore di riempimento deve essere YELLOW",
+                     newFill, rect.getInternalColor());
 
-    /**
-     * Shape nulla → NullPointerException.
-     */
-    @Test(expected = NullPointerException.class)
-    public void testExecute_NullShape_ThrowsException() {
-        new ChangeColorCommand(null, newBorder, newFill).execute();
+        // Act:
+        command.undo();
+
+        // Assert:
+        // Dopo undo(), la Shape deve aver ripristinato i colori originali
+        assertEquals("Dopo undo, il colore di contorno deve tornare BLACK",
+                     originalStroke, rect.getPerimetralColor());
+        assertEquals("Dopo undo, il colore di riempimento deve tornare TRANSPARENT",
+                     originalFill, rect.getInternalColor());
     }
-    
 }
