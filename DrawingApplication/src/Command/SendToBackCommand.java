@@ -5,52 +5,30 @@
 package Command;
 
 import Shapes.Shape;
-import java.util.List;
-import java.util.stream.Collectors;
-import javafx.scene.Group;
-import javafx.scene.layout.Pane;
 
 /**
+ * Comando per inviare una forma all'ultimo livello.
+ * Usa il DrawingReceiver per eseguire l'operazione di layer manipulation.
  *
  * @author Sterm
  */
 public class SendToBackCommand implements Command {
     private final Shape shape;
-    private final List<Shape> drawShapes;
-    private final Pane drawingPane;
-    private int oldIndex;
-    private boolean hasExecuted = false;
+    private final DrawingReceiver receiver;
 
-    public SendToBackCommand(Shape shape, List<Shape> drawShapes, Pane drawingPane) {
+    public SendToBackCommand(Shape shape, DrawingReceiver receiver) {
         this.shape = shape;
-        this.drawShapes = drawShapes;
-        this.drawingPane = drawingPane;
+        this.receiver = receiver;
     }
 
     @Override
     public void execute() {
-        oldIndex = drawShapes.indexOf(shape);
-        drawShapes.remove(shape);
-        drawShapes.add(0, shape); // in fondo (primo nel rendering)
-        redraw();
-        hasExecuted = true;
+        receiver.sendToBack(shape);
     }
-
 
     @Override
     public void undo() {
-        if(!hasExecuted) return;
-        drawShapes.remove(shape);
-        drawShapes.add(oldIndex, shape);
-        redraw();
-    }
-
-
-    private void redraw() {
-        drawingPane.getChildren().removeIf(node -> !(node instanceof Group));
-        drawingPane.getChildren().addAll(
-            drawShapes.stream().map(Shape::getFXShape).collect(Collectors.toList())
-        );
+        receiver.bringToFront(shape);
     }
 }
 

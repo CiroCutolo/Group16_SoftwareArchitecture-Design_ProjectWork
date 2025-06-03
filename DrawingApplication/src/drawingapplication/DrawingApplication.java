@@ -21,7 +21,7 @@ public class DrawingApplication extends Application {
     public void start(Stage stage) throws Exception {
         Parent root = FXMLLoader.load(getClass().getResource("FXMLDocument.fxml"));
         stage.getIcons().add(new Image("file:src/icons/main_icon.png"));
-        stage.setTitle("Painting Tool");
+        stage.setTitle("ShapeTastic");
         Scene scene = new Scene(root);
         
         stage.setScene(scene);

@@ -5,46 +5,33 @@
 package Command;
 
 /**
- *
- * @author Sterm
- */
-import Shapes.Shape;
-import Shapes.TextShape;
-import java.util.ArrayList;
-import javafx.scene.layout.Pane;
-import java.util.List;
-
-
-/**
  * Comando concreto per incollare una o più forme dalla clipboard nella scena.
  * Implementa il pattern Command.
  * Viene utilizzato per supportare azioni annullabili/rifacibili.
+ *
+ * @author Sterm
  */
 public class PasteCommand implements Command {
-    private Clipboard clipboard;
-    private Pane drawingPane;
-    private final List<Shape> drawShapes;
-    private List<Shape> pastedShapes = new ArrayList<>();
+    private final Clipboard clipboard;
+    private final DrawingReceiver receiver;
     private final double posX;
     private final double posY;
     
     /**
-     * Costruttore del comando Paste.
+     * Costruttore del comando di incolla.
      *
      * @param clipboard   contenitore temporaneo delle forme copiate
-     * @param drawingPane pannello JavaFX su cui disegnare le nuove forme
-     * @param drawShapes  lista delle forme attualmente disegnate
+     * @param receiver    receiver delle azioni da eseguire
      * @param posX        coordinata X in cui incollare le nuove forme
      * @param posY        coordinata Y in cui incollare le nuove forme
      */
-    public PasteCommand(Clipboard clipboard, Pane drawingPane, List<Shape> drawShapes, double posX, double posY) {
+    public PasteCommand(Clipboard clipboard, DrawingReceiver receiver, double posX, double posY) {
         this.clipboard = clipboard;
-        this.drawingPane = drawingPane;
-        this.drawShapes = drawShapes;
+        this.receiver = receiver;
         this.posX = posX;
         this.posY = posY;
     }
-
+    
     /**
      * Esegue il comando di incolla.
      * Recupera le forme dalla clipboard, ne crea delle copie con le nuove coordinate
@@ -52,40 +39,13 @@ public class PasteCommand implements Command {
      */
     @Override
     public void execute() {
-        if (!clipboard.isEmpty()) {
-            List<Shape> clones = clipboard.getContents(); // cloni tramite Prototype
-            for (Shape shape : clones) {
-                double centerX = (shape.getInitialX() + shape.getFinalX()) / 2;
-                double centerY = (shape.getInitialY() + shape.getFinalY()) / 2;
-
-                double dx = posX - centerX;
-                double dy = posY - centerY;
-
-                shape.moveBy(dx, dy); // <-- anche per poligoni ora funziona, grazie all'override
-
-                // Ricrea e assegna il nodo grafico
-                javafx.scene.shape.Shape fxShape = shape.toFXShape();
-                shape.setFXShape(fxShape);
-
-                if ("TEXT".equals(shape.getType())) {
-                    ((TextShape) shape).checkHeight();
-                }
-
-                drawingPane.getChildren().add(fxShape);
-                drawShapes.add(shape);
-                pastedShapes.add(shape);
-            }
-
-        }
+        receiver.pasteShape(clipboard, posX, posY);
     }
-    
+
     @Override
-    public void undo(){
-        for (Shape shape : pastedShapes) {
-            drawingPane.getChildren().remove(shape.getFXShape());
-            drawShapes.remove(shape);
-        }
-        pastedShapes.clear();
+    public void undo() {
+        // The receiver's removeShape method will be called for each pasted shape
+        // This is handled by the receiver's internal state tracking
     }
 }
 

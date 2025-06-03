@@ -18,7 +18,7 @@ import javafx.scene.shape.Polygon;
  *
  * @author ciroc
  */
-public class IrregularPolygonShape extends Shape implements Serializable{
+public class IrregularPolygonShape extends Shape{
 
     
     private transient List<Point2D> polygonPoints = new ArrayList<>();
@@ -82,32 +82,6 @@ public class IrregularPolygonShape extends Shape implements Serializable{
         this.polygonPoints = new ArrayList<>(points);
     }
     
-    
-
-    
-    @Override
-    public void moveBy(double dx, double dy) {
-        // aggiorna coordinate logiche
-        this.initialX += dx;
-        this.finalX += dx;
-        this.initialY += dy;
-        this.finalY += dy;
-
-        // aggiorna il nodo grafico, se presente
-        if (fxShape != null) {
-            fxShape.setTranslateX(fxShape.getTranslateX() + dx);
-            fxShape.setTranslateY(fxShape.getTranslateY() + dy);
-        }
-        
-        List<Point2D> movedPoints = new ArrayList<>();
-        for (Point2D p : polygonPoints) {
-            movedPoints.add(p.add(dx, dy));
-        }
-        this.polygonPoints = movedPoints;
-    }
-
-    
-    
     public void computeBoundingBox() {
         double minX = polygonPoints.stream().mapToDouble(Point2D::getX).min().orElse(0);
         double maxX = polygonPoints.stream().mapToDouble(Point2D::getX).max().orElse(0);
@@ -119,32 +93,6 @@ public class IrregularPolygonShape extends Shape implements Serializable{
         this.finalX = maxX;
         this.finalY = maxY;
     }
-    
-    
-@Override
-    public void resize(double newWidth, double newHeight) {
-        double oldWidth = getWidth();
-        double oldHeight = getHeight();
-
-        if (oldWidth == 0 || oldHeight == 0) return; // evita divisioni per zero
-
-        double centerX = (initialX + finalX) / 2;
-        double centerY = (initialY + finalY) / 2;
-
-        double scaleX = newWidth / oldWidth;
-        double scaleY = newHeight / oldHeight;
-
-        List<Point2D> resizedPoints = new ArrayList<>();
-        for (Point2D p : polygonPoints) {
-            double newX = centerX + (p.getX() - centerX) * scaleX;
-            double newY = centerY + (p.getY() - centerY) * scaleY;
-            resizedPoints.add(new Point2D(newX, newY));
-        }
-
-        polygonPoints = resizedPoints;
-        computeBoundingBox(); // ricalcola initial/final per coerenza
-        updateFXShapeFromLogic();
-    }       
     
     public void updateFXShapeFromLogic() {
         Polygon polygon = new Polygon();
@@ -176,4 +124,3 @@ public class IrregularPolygonShape extends Shape implements Serializable{
             .collect(Collectors.toList());
     }
 }
-

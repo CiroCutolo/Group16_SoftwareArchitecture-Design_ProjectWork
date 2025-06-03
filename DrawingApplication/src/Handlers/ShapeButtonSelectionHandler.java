@@ -5,6 +5,7 @@
 package Handlers;
 
 import Command.Command;
+import Command.DrawingReceiver;
 import Command.InsertShapeCommand;
 import Shapes.IrregularPolygonShape;
 import Shapes.Shape;
@@ -26,7 +27,6 @@ import javafx.scene.control.Tooltip;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
@@ -42,13 +42,13 @@ public class ShapeButtonSelectionHandler {
     private Tooltip polygonTooltip;
     private final List<Circle> polygonSidesPreviewDots;
     private final PreviewHandler previewHandler;
-    private final Pane drawingPane;
     private final ColorSelectionHandler colorHandler;
     private final ShapeFactory shapeFactory = new ShapeFactory();
-
-    public ShapeButtonSelectionHandler(Pane drawingPane, ColorSelectionHandler colorHandler, PreviewHandler previewHandler){
+    private DrawingReceiver receiver;
+    
+        public ShapeButtonSelectionHandler(DrawingReceiver receiver, ColorSelectionHandler colorHandler, PreviewHandler previewHandler){
+            this.receiver = receiver;
         this.colorHandler = colorHandler;
-        this.drawingPane = drawingPane;
         this.previewHandler = previewHandler;
         this.polygonSidesPreviewDots = new ArrayList<>();
     }
@@ -58,7 +58,7 @@ public class ShapeButtonSelectionHandler {
         if (type == ShapeType.POLYGON) {
             isDrawingPolygon = true;
             polygonTooltip = new Tooltip("Clicca per aggiungere punti. Clicca vicino al punto iniziale per chiudere.");
-            Tooltip.install(drawingPane, polygonTooltip);
+            Tooltip.install(receiver.getDrawingPane(), polygonTooltip);
 
             currentPolygon = (IrregularPolygonShape) shapeFactory.createShape(
                 ShapeType.POLYGON.name(), 0, 0, 0, 0,
@@ -67,9 +67,9 @@ public class ShapeButtonSelectionHandler {
             );
 
             polygonSidesPreviewDots.clear();
-            drawingPane.setCursor(Cursor.CROSSHAIR);
+            receiver.getDrawingPane().setCursor(Cursor.CROSSHAIR);
         } else {
-            drawingPane.setCursor(Cursor.DEFAULT);
+            receiver.getDrawingPane().setCursor(Cursor.DEFAULT);
         }
     }
 
@@ -80,9 +80,9 @@ public class ShapeButtonSelectionHandler {
 
     private void cancelPolygonDrawing() {
         if (isDrawingPolygon) {
-            drawingPane.getChildren().removeAll(polygonSidesPreviewDots);
-            Tooltip.uninstall(drawingPane, polygonTooltip);
-            drawingPane.setCursor(Cursor.DEFAULT);
+            receiver.getDrawingPane().getChildren().removeAll(polygonSidesPreviewDots);
+            Tooltip.uninstall(receiver.getDrawingPane(), polygonTooltip);
+            receiver.getDrawingPane().setCursor(Cursor.DEFAULT);
 
             isDrawingPolygon = false;
             currentPolygon = null;
@@ -90,14 +90,17 @@ public class ShapeButtonSelectionHandler {
         }
     }
 
-    public void handleMousePressed(MouseEvent e, DrawingStateHistory commandHistory, List<Shape> drewShapes) {
+    public void handleMousePressed(MouseEvent e, DrawingStateHistory commandHistory) {
         if (selectedShapeType == ShapeType.TEXT) {
             Optional<TextShape> result = StringDialog(e);
-            result.ifPresent(s -> {
-                Command insertCmd = new InsertShapeCommand(s, drewShapes, drawingPane);
-                commandHistory.executeCommand(insertCmd);            });
+            result.ifPresent(selectedShape -> {
+                Command insertCmd = new InsertShapeCommand(selectedShape, receiver);
+                commandHistory.executeCommand(insertCmd);            
+            });
 
         } else if (selectedShapeType == ShapeType.POLYGON && isDrawingPolygon) {
+            //e.consume();
+
             if (e.getButton() == MouseButton.PRIMARY) {
                 double x = e.getX();
                 double y = e.getY();
@@ -105,17 +108,17 @@ public class ShapeButtonSelectionHandler {
                 currentPolygon.addPoint(x, y);
 
                 Circle dot = new Circle(x, y, 3, Color.BLACK);
-                drawingPane.getChildren().add(dot);
+                receiver.getDrawingPane().getChildren().add(dot);
                 polygonSidesPreviewDots.add(dot);
 
                 if (currentPolygon.getPolygonPoints().size() > 2 && currentPolygon.isClosed()) {
-                    drawingPane.setCursor(Cursor.DEFAULT);
-                    Tooltip.uninstall(drawingPane, polygonTooltip);
-                    drawingPane.getChildren().removeAll(polygonSidesPreviewDots);
+                    receiver.getDrawingPane().setCursor(Cursor.DEFAULT);
+                    Tooltip.uninstall(receiver.getDrawingPane(), polygonTooltip);
+                    receiver.getDrawingPane().getChildren().removeAll(polygonSidesPreviewDots);
 
                     currentPolygon.computeBoundingBox();
 
-                    Command insertCmd = new InsertShapeCommand(currentPolygon, drewShapes, drawingPane);
+                    Command insertCmd = new InsertShapeCommand(currentPolygon, receiver);
                     commandHistory.executeCommand(insertCmd);
                     // Reset
                     isDrawingPolygon = false;
@@ -131,26 +134,26 @@ public class ShapeButtonSelectionHandler {
     }
     
     public void handleMouseDragged(MouseEvent e) {
-        if (selectedShapeType != ShapeType.TEXT && selectedShapeType != ShapeType.POLYGON) {
-            previewHandler.handleMouseDragged(e, selectedShapeType.name(), drawingPane);
+        if (selectedShapeType != null && selectedShapeType != ShapeType.TEXT && selectedShapeType != ShapeType.POLYGON) {
+            previewHandler.handleMouseDragged(e, selectedShapeType.name(), receiver.getDrawingPane());
         }
     }
     
-    public void handleMouseReleased(MouseEvent e, DrawingStateHistory commandHistory, List<Shape> drewShapes) {
+    public void handleMouseReleased(MouseEvent e, DrawingStateHistory commandHistory) {
         // Ignora se non è selezionato nessuno strumento oppure se è TEXT/POLYGON (che non usano previewHandler)
         if (selectedShapeType == null || selectedShapeType == ShapeType.TEXT || selectedShapeType == ShapeType.POLYGON) {
             return;
         }
 
         // Esegui il disegno finale della forma con PreviewHandler
-        Shape s = previewHandler.handleMouseReleased(
-            e, selectedShapeType.name(), drawingPane,
+        Shape selectedShape = previewHandler.handleMouseReleased(
+            e, selectedShapeType.name(), receiver.getDrawingPane(),
             colorHandler.getPerimetralColor(),
             colorHandler.getFillingColor()
         );
 
-        if (s != null) {
-            Command insertCmd = new InsertShapeCommand(s, drewShapes, drawingPane);
+        if (selectedShape != null) {
+            Command insertCmd = new InsertShapeCommand(selectedShape, receiver);
             insertCmd.execute();
             commandHistory.push(insertCmd);
         }
@@ -210,7 +213,7 @@ public class ShapeButtonSelectionHandler {
         return dialog.showAndWait();
     }
 
-    private void showError(String msg) {
+    public void showError(String msg) {
         Alert alert = new Alert(Alert.AlertType.ERROR);
         alert.setTitle("Errore");
         alert.setHeaderText(null);

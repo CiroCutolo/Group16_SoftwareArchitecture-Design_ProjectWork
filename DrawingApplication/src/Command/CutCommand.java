@@ -6,66 +6,43 @@
 package Command;
 
 import Shapes.Shape;
-import java.util.List;
-import javafx.scene.layout.Pane;
 
 /**
+* Command for cutting a shape from the drawing and copying it to the clipboard.
+* Uses the DrawingReceiver to perform the actual cut operation.
  *
  * @author gaetanof
  */
-
-/**  
-* Comando concreto per tagliare una o più forme selezionate dalla scena e copiarle nella clipboard.
-* Implementa il pattern Command. 
-* Viene utilizzato per supportare operazioni annullabili/rifacibili e per separare invocazione da esecuzione.
-*/
-public class CutCommand implements Command{
-    private List<Shape> selection;
-    private Clipboard clipboard;
-    private List<Shape> drawShapes;
-    private Pane drawingPane;
+public class CutCommand implements Command {
+    private final Shape shape;
+    private final Clipboard clipboard;
+    private final DrawingReceiver receiver;
     private Shape shapeClone;
     
     /** 
-    * Costruttore del comando Cut.
-    * @param selection lista di forme attualmente selezionate
-    * @param clipboard contenitore temporaneo delle forme copiate 
-    * @param drawShapes lista globale delle forme disegnate 
-    * @param drawingPane pannello JavaFX da cui rimuovere le forme tagliate
+    * Constructor for the cut command.
+    * @param shape the shape to cut
+    * @param clipboard clipboard to store the cut shape
+    * @param receiver the drawing receiver that will handle the cut operation
     */
-    public CutCommand(List<Shape> selection, Clipboard clipboard, List<Shape> drawShapes, Pane drawingPane) {
-        this.selection = selection;
+    public CutCommand(Shape shape, Clipboard clipboard, DrawingReceiver receiver) {
+        this.shape = shape;
         this.clipboard = clipboard;
-        this.drawShapes = drawShapes;
-        this.drawingPane = drawingPane;
+        this.receiver = receiver;
+        this.shapeClone = shape.clone();
     }
     
-    /**
-    * Esegue il comando di taglio. 
-    * Copia le forme selezionate nella clipboard e le rimuove dal pane di disegno e dalla lista interna.
-    */
     @Override
     public void execute() {
-        if (selection == null || selection.isEmpty()) return;
-
-        // Copy to clipboard
-        clipboard.setContents(selection);
-
-        // Remove from pane and internal list
-        for (Shape shape : selection) {
-            drawingPane.getChildren().remove(shape.getFXShape());
-            drawShapes.remove(shape);
-            shapeClone = shape;
+        if (shape != null) {
+            receiver.cutShape(shape, clipboard);
         }
     }
     
     @Override
-    public void undo(){
-        if (shapeClone == null) return;
-        
-        javafx.scene.shape.Shape fxShape = shapeClone.toFXShape();
-        shapeClone.setFXShape(fxShape);
-        drawingPane.getChildren().add(fxShape);
-        drawShapes.add(shapeClone);
+    public void undo() {
+        if (shapeClone != null) {
+            receiver.insertShape(shapeClone);
+        }
     }
 }

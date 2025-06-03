@@ -12,6 +12,7 @@ import javafx.scene.layout.Pane;
 
 import java.util.List;
 
+import Command.DrawingReceiver;
 import Command.MoveShapeCommand;
 import Handlers.DrawingStateHistory;
 import java.util.ArrayList;
@@ -31,6 +32,7 @@ import javafx.scene.paint.Color;
  * 
  */
 public class ShapeSelectionHandler {
+    private final DrawingReceiver receiver;
 
     // SELEZIONE
     private Shape selectedShape = null;
@@ -49,8 +51,9 @@ public class ShapeSelectionHandler {
     // STATO 
     private final DrawingStateHistory history;
 
-    public ShapeSelectionHandler(DrawingStateHistory history) {
+    public ShapeSelectionHandler(DrawingStateHistory history, DrawingReceiver receiver) {
         this.history = history;
+        this.receiver = receiver;
     }
 
     /*
@@ -298,7 +301,9 @@ public class ShapeSelectionHandler {
                 if (newMinX < 0) dx -= newMinX;
                 if (newMinY < 0) dy -= newMinY;
 
-                shape.moveBy(dx, dy);
+                // shape.moveBy(dx, dy);
+                MoveShapeCommand moveCmd = new MoveShapeCommand(shape, dx, dy, receiver);
+                moveCmd.execute();
                 draggingPointX = e.getSceneX();
                 draggingPointY = e.getSceneY();
 
@@ -313,7 +318,9 @@ public class ShapeSelectionHandler {
                 double dx = fxShape.getTranslateX() - start[0];
                 double dy = fxShape.getTranslateY() - start[1];
                 if (dx != 0 || dy != 0) {
-                    history.push(new MoveShapeCommand(shape, dx, dy));
+                    // history.push(new MoveShapeCommand(shape, dx, dy));
+                    MoveShapeCommand moveCmd = new MoveShapeCommand(shape, dx, dy, receiver);
+                    history.push(moveCmd);
                 }
                 e.consume();
             }

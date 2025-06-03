@@ -5,11 +5,7 @@
 package Command;
 
 import Shapes.Shape;
-import java.util.Collections;
-import java.util.List;
-import java.util.stream.Collectors;
-import javafx.scene.Group;
-import javafx.scene.layout.Pane;
+
 
 /**
  *
@@ -17,43 +13,28 @@ import javafx.scene.layout.Pane;
  */
 public class BringForwardCommand implements Command {
     private final Shape shape;
-    private final List<Shape> drawShapes;
-    private final Pane drawingPane;
-    private int oldIndex;
-    private boolean hasExecuted = false; 
+    private final DrawingReceiver receiver;
 
-    public BringForwardCommand(Shape shape, List<Shape> drawShapes, Pane drawingPane) {
+    public BringForwardCommand(Shape shape, DrawingReceiver receiver) {
         this.shape = shape;
-        this.drawShapes = drawShapes;
-        this.drawingPane = drawingPane;
+        this.receiver = receiver;
     }
 
     @Override
     public void execute() {
-        oldIndex = drawShapes.indexOf(shape);
-        if (oldIndex < drawShapes.size() - 1) {
-            Collections.swap(drawShapes, oldIndex, oldIndex + 1);
-            redraw();
-            hasExecuted = true;
-        }
+        receiver.bringForward(shape);
     }
 
     @Override
     public void undo() {
-        if (!hasExecuted) return;
-        
-        int currentIndex = drawShapes.indexOf(shape);
-        if (currentIndex > 0) {
-            Collections.swap(drawShapes, currentIndex, currentIndex - 1);
-            redraw();
-        }
+        receiver.sendBackward(shape);
     }
     
-    private void redraw() {
-        drawingPane.getChildren().removeIf(node -> !(node instanceof Group));
-        drawingPane.getChildren().addAll(
-            drawShapes.stream().map(Shape::getFXShape).collect(Collectors.toList())
-        );
-    }
+    //private void redraw() {
+    //    drawingPane.getChildren().removeIf(node -> !(node instanceof Group));
+    //    drawingPane.getChildren().addAll(
+    //        drawShapes.stream().map(Shape::getFXShape).collect(Collectors.toList())
+    //    );
+    //}
 }
 

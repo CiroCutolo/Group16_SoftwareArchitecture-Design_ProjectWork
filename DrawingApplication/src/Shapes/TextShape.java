@@ -91,7 +91,7 @@ public class TextShape extends Shape implements Serializable {
      */
     //(almeno per adesso)
     //Da vedere poi per la stretch se useremo sempre resize o altra funzione
-    @Override
+    
     public void resize(double newWidth, double newHeight) {
         // Il testo non viene ridimensionato geometricamente.
         // La dimensione è controllata dal fontSize (vedi setFontSize()).
