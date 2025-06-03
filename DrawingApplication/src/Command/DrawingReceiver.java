@@ -296,10 +296,7 @@ public class DrawingReceiver {
                     Shape clone = (Shape) shape.clone();
                     double dx = x - shape.getInitialX();
                     double dy = y - shape.getInitialY();
-                    clone.setInitialX(x);
-                    clone.setInitialY(y);
-                    clone.setFinalX(clone.getFinalX() + dx);
-                    clone.setFinalY(clone.getFinalY() + dy);
+                    moveShape(clone, dx, dy);
                     insertShape(clone);
                 } catch (Exception e) {
                     System.err.println("Error while pasting shape: " + e.getMessage());

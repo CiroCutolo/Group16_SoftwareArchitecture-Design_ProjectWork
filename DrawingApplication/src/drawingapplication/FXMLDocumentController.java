@@ -551,6 +551,7 @@ public class FXMLDocumentController implements Initializable {
             return;
         }
         System.out.println("[DEBUG] Undone command: " + undone.getClass().getSimpleName());
+        refreshDrawingPane();
     }
 
     private void updateLayerMenuItems() {
@@ -576,42 +577,54 @@ public class FXMLDocumentController implements Initializable {
      * @param drawingPane riquadro di disegno da ridimensionare
      */
     private void drawingPaneSizeDynamicUpdate(Pane drawingPane) {
-        double maximumX = 0;
-        double maximumY = 0;
-        double minimumX = Double.MAX_VALUE, minimumY = Double.MAX_VALUE; 
-        for (Node node : drawingPane.getChildren()) {
-            if (node instanceof Group) {
-                continue;
-            }
-            Bounds bounds = node.getBoundsInParent();
-            maximumX = Math.max(maximumX, bounds.getMaxX());
-            maximumY = Math.max(maximumY, bounds.getMaxY());
-            minimumX = Math.min(minimumX, bounds.getMinX());  
-            minimumY = Math.min(minimumY, bounds.getMinY());    
-        }
-
-        double padding = 100;
-
-        // Aggiunta condizionale: solo se serve aggiornare
-        if (maximumX + padding > drawingPane.getWidth()) {
-            drawingPane.setPrefWidth(maximumX + padding);
-        }
-
-        if (maximumY + padding > drawingPane.getHeight()) {
-            drawingPane.setPrefHeight(maximumY + padding);
-        }
         
-        double dx = minimumX < 0 ? -minimumX + padding : 0;
-        double dy = minimumY < 0 ? -minimumY + padding : 0;
+        double maxX = 0;
+        double maxY = 0;
+        double paddingNegativeBound = 20;
+        double paddingPositiveBound = 100;
+        double edgeTolerance = 0.5;
 
-        if (dx != 0 || dy != 0) {
-            for (Shapes.Shape s : drawShapes) {   // lista logica delle forme
+        for (Shapes.Shape s : drawShapes) {
+            javafx.scene.shape.Shape fx = s.getFXShape();
+            if (fx == null) continue;
+
+            Bounds bounds = fx.getBoundsInParent();
+
+            double dx = 0, dy = 0;
+
+            if (bounds.getMinX() < -edgeTolerance) {
+                dx = -bounds.getMinX() + paddingNegativeBound;
+            }
+
+            if (bounds.getMinY() < -edgeTolerance) {
+                dy = -bounds.getMinY() + paddingNegativeBound;
+            }
+
+            if (dx != 0 || dy != 0) {
                 Command moveCmd = new MoveShapeCommand(s, dx, dy, drawingReceiver);
-                moveCmd.execute();
+                    moveCmd.execute();
             }
         }
+        for (Shapes.Shape s : drawShapes) {
+            javafx.scene.shape.Shape fx = s.getFXShape();
+            if (fx == null) continue;
 
+            Bounds bounds = fx.getBoundsInParent();
+
+            maxX = Math.max(maxX, bounds.getMaxX());
+            maxY = Math.max(maxY, bounds.getMaxY());
+        }
+
+        // Estendi il canvas se serve
+        if (maxX + paddingPositiveBound > drawingPane.getWidth()) {
+            drawingPane.setPrefWidth(maxX + paddingPositiveBound);
+        }
+
+        if (maxY + paddingPositiveBound > drawingPane.getHeight()) {
+            drawingPane.setPrefHeight(maxY + paddingPositiveBound);
+        }
     }
+
 
     @FXML
     private void onZoomChanged(ActionEvent event) {
