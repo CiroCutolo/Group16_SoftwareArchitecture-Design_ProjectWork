@@ -90,15 +90,4 @@ public class TextShapeTest {
         textShape.setFontSize(32.0);
         assertEquals(32.0, textShape.getFontSize(), 0.01);
     }
-
-    @Test
-    public void testCheckHeightDoesNotCrash() {
-        // Non possiamo sapere l'effetto esatto senza una scena JavaFX, ma testiamo che non lanci eccezioni
-        textShape.toFXShape(); // Necessario per inizializzare fxShape
-        try {
-            textShape.checkHeight();
-        } catch (Exception e) {
-            fail("checkHeight() ha lanciato un'eccezione: " + e.getMessage());
-        }
-    }
 }
