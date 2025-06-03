@@ -4,20 +4,7 @@
  */
 package drawingapplication;
 
-import Command.BringForwardCommand;
-import Command.BringToFrontCommand;
-import Command.ChangeColorCommand;
-import Command.Clipboard;
-import Command.Command;
-import Command.CutCommand;
-import Command.DeleteCommand;
-import Command.InsertShapeCommand;
-import Command.MirrorCommand;
-import Command.PasteCommand;
-import Command.ResizeCommand;
-import Command.RotateCommand;
-import Command.SendBackwardCommand;
-import Command.SendToBackCommand;
+import Command.*;
 import Handlers.ColorSelectionHandler;
 import Handlers.DrawingStateHistory;
 import Handlers.GridHandler;
@@ -101,11 +88,9 @@ public class FXMLDocumentController implements Initializable {
     private Button salvaButton;
     @FXML
     private Button CaricaButton;
-    /*
-    @FXML
-    private Button cutButton;
-     */
 
+
+     private List<Shape> drawShapes = new ArrayList<>();
     // Handler per la selezione colori
     private final ColorSelectionHandler colorHandler = new ColorSelectionHandler();
 
@@ -116,24 +101,23 @@ public class FXMLDocumentController implements Initializable {
     private final PreviewHandler previewHandler = new PreviewHandler();
 
     private final DrawingStateHistory commandHistory = new DrawingStateHistory();
-    //Handler per la selezione della forma
-    private final ShapeSelectionHandler selectionHandler = new ShapeSelectionHandler(commandHistory);
-    
-    private ShapeButtonSelectionHandler shapeButtonHandler;
 
     //Clipboard per copiare le forme
-    private Clipboard clipboard = new Clipboard();
+    private final Clipboard clipboard = new Clipboard();
     
-    private ShapeFactory shapeFactory = new ShapeFactory();
+    private final ShapeFactory shapeFactory = new ShapeFactory();
+    
+    private ShapeButtonSelectionHandler shapeBtnSelHandler;
+    private DrawingReceiver drawingReceiver;
 
-    private List<Shape> drawShapes = new ArrayList<>();
+    //Handler per la selezione della forma
+    private ShapeSelectionHandler selectionHandler;
+    
     private ContextMenu shapeMenu;
     private double lastContextX;
     private double lastContextY;
     private ContextMenu canvasMenu;
     private MenuItem pasteMenuItem;
-    private String selectedShapeType = null;
-    private Boolean isPaneSizeChanged = false;
     private IrregularPolygonShape currentPolygon;
     private List<javafx.scene.shape.Circle> polygonSidesPreviewDots = new ArrayList<>();
     private boolean isDrawingPolygon = false;
@@ -177,7 +161,9 @@ public class FXMLDocumentController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle rb) {
-
+        drawingReceiver = new DrawingReceiver(drawShapes, drawingPane);
+        selectionHandler = new ShapeSelectionHandler(commandHistory, drawingReceiver);
+        
         createShapeMenu();
         createCanvasMenu();
 
@@ -192,6 +178,9 @@ public class FXMLDocumentController implements Initializable {
         AnchorPane.setLeftAnchor(drawingPane, 0.0);
         AnchorPane.setRightAnchor(drawingPane, 0.0);
         VBox.setVgrow(drawingPane, Priority.ALWAYS);
+
+        // Initialize ShapeButtonSelectionHandler after drawingPane is fully set up
+        shapeBtnSelHandler = new ShapeButtonSelectionHandler(drawingReceiver, colorHandler, previewHandler);
 
         // Sezione di metodi utili alla visualizzazione dell'icona del tasto di undo
         ImageView icon = new ImageView(getClass().getResource("/icons/undo_icon.png").toExternalForm());
@@ -215,18 +204,19 @@ public class FXMLDocumentController implements Initializable {
         setTooltipAndImage(lineButton1, "Line", "line_icon.png");
         setTooltipAndImage(textButton1,"Text","text_icon.png");
         setTooltipAndImage(polygonButton, "Polygon", "polygon_icon.png");
+        
         //Pressione del mouse
         drawingPane.setOnMousePressed(e -> {
-                shapeButtonHandler.handleMousePressed(e, commandHistory, drawShapes);
+            shapeBtnSelHandler.handleMousePressed(e, commandHistory);
         });
 
         drawingPane.setOnMouseDragged(e -> {
-            shapeButtonHandler.handleMouseDragged(e);
+            shapeBtnSelHandler.handleMouseDragged(e);
             drawingPaneSizeDynamicUpdate(drawingPane);
         });
 
         drawingPane.setOnMouseReleased(e -> {
-            shapeButtonHandler.handleMouseReleased(e, commandHistory, drawShapes);
+            shapeBtnSelHandler.handleMouseReleased(e, commandHistory);
         });
 
         /**
@@ -240,7 +230,7 @@ public class FXMLDocumentController implements Initializable {
 
             if (event.getButton() == MouseButton.PRIMARY) {
                 // Solo se nessuna forma è selezionata = modalità selezione
-                if (!shapeButtonHandler.isShapeSelected()) {
+                if (!shapeBtnSelHandler.isShapeSelected()) {
                     selectionHandler.handleSelection(event, drawShapes, drawingPane);
                 }
             } else if (event.getButton() == MouseButton.SECONDARY) {
@@ -255,9 +245,7 @@ public class FXMLDocumentController implements Initializable {
             }
         });
 
-        zoomComboBox.getItems().addAll(
-                Arrays.asList("100 %", "200 %", "300 %", "400 %")
-        );
+        zoomComboBox.getItems().addAll( Arrays.asList("100 %", "200 %", "300 %", "400 %"));
         zoomComboBox.getSelectionModel().select("100 %");
 
         zoomGroup.scaleXProperty().bind(zoomProperty);
@@ -289,18 +277,18 @@ public class FXMLDocumentController implements Initializable {
 
     @FXML
     private void selectShapeButton(ActionEvent event) {
-        if (rectangleButton1.isSelected()) {
-            shapeButtonHandler.selectShape(ShapeType.RECTANGLE);
+        if(rectangleButton1.isSelected()){
+            shapeBtnSelHandler.selectShape(ShapeType.RECTANGLE);
         } else if (ellipseButton1.isSelected()) {
-            shapeButtonHandler.selectShape(ShapeType.ELLIPSE);
+            shapeBtnSelHandler.selectShape(ShapeType.ELLIPSE);
         } else if (lineButton1.isSelected()) {
-            shapeButtonHandler.selectShape(ShapeType.LINE);
+            shapeBtnSelHandler.selectShape(ShapeType.LINE);
         } else if (polygonButton.isSelected()) {
-            shapeButtonHandler.selectShape(ShapeType.POLYGON);
+            shapeBtnSelHandler.selectShape(ShapeType.POLYGON);
         } else if (textButton1.isSelected()) {
-            shapeButtonHandler.selectShape(ShapeType.TEXT);
+            shapeBtnSelHandler.selectShape(ShapeType.TEXT);
         } else {
-            shapeButtonHandler.clearSelection();
+            shapeBtnSelHandler.clearSelection();
         }
     }
 
@@ -330,9 +318,8 @@ public class FXMLDocumentController implements Initializable {
         pasteMenuItem = new MenuItem("Incolla");
         pasteMenuItem.setDisable(true);
         pasteMenuItem.setOnAction(e -> {
-            Command paste = new PasteCommand(clipboard, drawingPane, drawShapes, lastContextX, lastContextY);
-            paste.execute();
-            commandHistory.push(paste);
+            Command paste = new PasteCommand(clipboard, drawingReceiver, lastContextX, lastContextY);
+            commandHistory.executeCommand(paste);
             drawingPaneSizeDynamicUpdate(drawingPane);
         });
         canvasMenu.getItems().add(pasteMenuItem);
@@ -362,9 +349,8 @@ public class FXMLDocumentController implements Initializable {
         deletion.setOnAction(e -> {
             Shape selectedShape = selectionHandler.getSelectedShape();
             if (selectedShape != null) {
-                Command delete = new DeleteCommand(drawingPane, drawShapes, selectedShape);
-                delete.execute();
-                commandHistory.push(delete);
+                Command delete = new DeleteCommand(drawingReceiver, selectedShape);
+                commandHistory.executeCommand(delete);
                 selectionHandler.setSelectedShape(null);
             }
         });
@@ -372,7 +358,7 @@ public class FXMLDocumentController implements Initializable {
         copy.setOnAction(e -> {
             Shape selectedShape = selectionHandler.getSelectedShape();
             if (selectedShape != null) {
-                clipboard.setContents(Collections.singletonList(selectedShape));
+                drawingReceiver.copyShape(selectedShape, clipboard);
                 pasteMenuItem.setDisable(false);
             }
         });
@@ -380,9 +366,8 @@ public class FXMLDocumentController implements Initializable {
         cut.setOnAction(e -> {
             Shape selectedShape = selectionHandler.getSelectedShape();
             if (selectedShape != null) {
-                Command cutC = new CutCommand(Collections.singletonList(selectedShape), clipboard, drawShapes, drawingPane);
-                cutC.execute();
-                commandHistory.push(cutC);
+                Command cutCmd = new CutCommand(selectedShape, clipboard, drawingReceiver);
+                commandHistory.executeCommand(cutCmd);
                 selectionHandler.setSelectedShape(null);
                 pasteMenuItem.setDisable(false);
                 shapeMenu.hide();
@@ -392,136 +377,119 @@ public class FXMLDocumentController implements Initializable {
         // Cambia colore alla forma selezionata
         changeColor.setOnAction(e -> {
             Shape selectedShape = selectionHandler.getSelectedShape();
-
-            // Colori selezionati nei pannelli colore
-            Color newStroke = colorHandler.getPerimetralColor();
-            Color newFill = colorHandler.getFillingColor();
-
-            // Esegui il comando di cambio colore (supporta anche l'undo)
-            Command changeColorCmd = new ChangeColorCommand(selectedShape, newStroke, newFill);
-            changeColorCmd.execute();
-            commandHistory.push(changeColorCmd);
+            if (selectedShape != null) {
+                // Colori selezionati nei pannelli colore
+                Color newStroke = colorHandler.getPerimetralColor();
+                Color newFill = colorHandler.getFillingColor();
+                // Esegui il comando di cambio colore
+                Command changeColorCmd = new ChangeColorCommand(selectedShape, newStroke, newFill, drawingReceiver);
+                commandHistory.executeCommand(changeColorCmd);
+            }
         });
 
         // Assegna le azioni
         bringToFront.setOnAction(e -> {
-            Shape s = selectionHandler.getSelectedShape();
-            if (s != null) {
-                Command allForwardCmd = new BringToFrontCommand(s, drawShapes, drawingPane);
-                allForwardCmd.execute();
-                commandHistory.push(allForwardCmd);
+            Shape selectedShape = selectionHandler.getSelectedShape();
+            if (selectedShape != null) {
+                Command allForwardCmd = new BringToFrontCommand(selectedShape, drawingReceiver);
+                commandHistory.executeCommand(allForwardCmd);
             }
         });
-        bringForward.setOnAction(e -> {
-            Shape s = selectionHandler.getSelectedShape();
-            if (s != null) {
-                Command oneForwardCmd = new BringForwardCommand(s, drawShapes, drawingPane);
-                oneForwardCmd.execute();
-                commandHistory.push(oneForwardCmd);
-            }
-        });
-        sendBackward.setOnAction(e -> {
-            Shape s = selectionHandler.getSelectedShape();
-            if (s != null) {
-                Command oneBackCmd = new SendBackwardCommand(s, drawShapes, drawingPane);
-                oneBackCmd.execute();
-                commandHistory.push(oneBackCmd);
-            }
-        });
-        sendToBack.setOnAction(e -> {
-            Shape s = selectionHandler.getSelectedShape();
-            if (s != null) {
-                Command allBackCmd = new SendToBackCommand(s, drawShapes, drawingPane);
-                allBackCmd.execute();
-                commandHistory.push(allBackCmd);
-            }
-        });
-        // Imposta l'azione associata alla voce di menu "Ridimensiona".
-        // Quando selezionata, apre una finestra di dialogo per modificare larghezza e altezza
-        // della forma attualmente selezionata tramite il selectionHandler.
-        resize.setOnAction(e -> showResizeDialog(selectionHandler.getSelectedShape()));
-
-        // Aggiunge tutte le voci di menu (elimina, copia, taglia, cambia colore, ridimensiona)
-        // al menu contestuale che appare con il tasto destro su una forma.
-        shapeMenu.getItems().addAll(deletion, copy, cut, changeColor, resize);
-
-        layerMenu.getItems().addAll(bringToFront, bringForward, sendBackward, sendToBack);
-        shapeMenu.getItems().add(layerMenu);
         
-        // 2) Azioni per i due tipi di specchiatura
-         mirrorH.setOnAction(e -> {
-            Shapes.Shape s = selectionHandler.getSelectedShape();
-            if (s != null) {
-                Command c = new MirrorCommand(s, false);
-                c.execute();
-                commandHistory.push(c);
-                selectionHandler.clearSelection();
+        bringForward.setOnAction(e -> {
+            Shape selectedShape = selectionHandler.getSelectedShape();
+            if (selectedShape != null) {
+                Command oneForwardCmd = new BringForwardCommand(selectedShape, drawingReceiver);
+                commandHistory.executeCommand(oneForwardCmd);
+            }
+        });
+        
+        sendBackward.setOnAction(e -> {
+            Shape selectedShape = selectionHandler.getSelectedShape();
+            if (selectedShape != null) {
+                Command oneBackCmd = new SendBackwardCommand(selectedShape, drawingReceiver);
+                commandHistory.executeCommand(oneBackCmd);
+            }
+        });
+        
+        sendToBack.setOnAction(e -> {
+            Shape selectedShape = selectionHandler.getSelectedShape();
+            if (selectedShape != null) {
+                Command allBackCmd = new SendToBackCommand(selectedShape, drawingReceiver);
+                commandHistory.executeCommand(allBackCmd);
+            }
+        });
+
+        // Specchiatura orizzontale
+        mirrorH.setOnAction(e -> {
+            Shape selectedShape = selectionHandler.getSelectedShape();
+            if (selectedShape != null) {
+                Command mirrorHorizontalCmd = new MirrorCommand(selectedShape, false, drawingReceiver);
+                commandHistory.executeCommand(mirrorHorizontalCmd);
             }
         });
         
         mirrorV.setOnAction(e -> {
-            Shapes.Shape s = selectionHandler.getSelectedShape();
-            if (s != null) {
-                Command c = new MirrorCommand(s, true);  
-                c.execute();
-                commandHistory.push(c);
+            Shape selectedShape = selectionHandler.getSelectedShape();
+            if (selectedShape != null) {
+                Command mirrorVerticalCmd = new MirrorCommand(selectedShape, true, drawingReceiver);
+                commandHistory.executeCommand(mirrorVerticalCmd);
                 selectionHandler.clearSelection();
             }
         });
 
-        // 3) Aggiungo le voci al menu e poi il menu stesso al context menu
+        // Imposta l'azione associata alla voce di menu "Ridimensiona"
+        resize.setOnAction(e -> showResizeDialog(selectionHandler.getSelectedShape()));
+
+        // Aggiunge tutte le voci di menu al menu contestuale
+        shapeMenu.getItems().addAll(deletion, copy, cut, changeColor, resize);
+        layerMenu.getItems().addAll(bringToFront, bringForward, sendBackward, sendToBack);
+        shapeMenu.getItems().add(layerMenu);
         mirrorMenu.getItems().addAll(mirrorH, mirrorV);
         shapeMenu.getItems().add(mirrorMenu);
-       
-        // 1) Creo il sottomenù Ruota
+        
+        // Creo il sottomenù Ruota
         Menu rotateMenu = new Menu("Ruota");
         MenuItem rotate45 = new MenuItem("45°");
         MenuItem rotate90 = new MenuItem("90°");
         MenuItem rotate180 = new MenuItem("180°");
 
-        // 2) Imposto le azioni di rotazione
+        // Imposto le azioni di rotazione
         rotate45.setOnAction(e -> {
-            Shapes.Shape s = selectionHandler.getSelectedShape();
-            System.out.println(selectionHandler.getSelectedShape());
-            if (s != null) {
-                Command c = new RotateCommand(s, 45);
-                c.execute();
-                commandHistory.push(c);
-                updateWorkspace(); 
-                selectionHandler.clearSelection();
+            Shape selectedShape = selectionHandler.getSelectedShape();
+            if (selectedShape != null) {
+                Command rotate45Cmd = new RotateCommand(selectedShape, 45, drawingReceiver);
+                commandHistory.executeCommand(rotate45Cmd);
+                updateWorkspace();
             }
         });
 
-         rotate90.setOnAction(e -> {
-            Shapes.Shape s = selectionHandler.getSelectedShape();
-            if (s != null) {
-                Command c = new RotateCommand(s, 90);
-                c.execute();
-                commandHistory.push(c);
-                updateWorkspace(); 
-                selectionHandler.clearSelection();
+        rotate90.setOnAction(e -> {
+            Shape selectedShape = selectionHandler.getSelectedShape();
+            if (selectedShape != null) {
+                Command rotate90Cmd = new RotateCommand(selectedShape, 90, drawingReceiver);
+                commandHistory.executeCommand(rotate90Cmd);
+                updateWorkspace();
             }
         });
 
-         rotate180.setOnAction(e -> {
-            Shapes.Shape s = selectionHandler.getSelectedShape();
-            if (s != null) {
-                Command c = new RotateCommand(s, 180);
-                c.execute();
-                commandHistory.push(c);
-                updateWorkspace(); 
-                selectionHandler.clearSelection();
+        rotate180.setOnAction(e -> {
+            Shape selectedShape = selectionHandler.getSelectedShape();
+            if (selectedShape != null) {
+                Command rotate180Cmd = new RotateCommand(selectedShape, 180, drawingReceiver);
+                commandHistory.executeCommand(rotate180Cmd);
+                updateWorkspace();
             }
         });
 
-        // 3) Aggiungo le voci al menu e poi il menu stesso al context menu
+        // Aggiungo le voci al menu e poi il menu stesso al context menu
         rotateMenu.getItems().addAll(rotate45, rotate90, rotate180);
         shapeMenu.getItems().add(rotateMenu);
     }
     
     private void updateWorkspace() {
         refreshDrawingPane();                  // già ridisegna le forme
-        drawingPaneSizeDynamicUpdate(drawingPane); // e ricalcola l’area di lavoro
+        drawingPaneSizeDynamicUpdate(drawingPane); // e ricalcola l'area di lavoro
     }
 
     private void refreshDrawingPane() {
@@ -557,14 +525,21 @@ public class FXMLDocumentController implements Initializable {
             return; // non fare nulla
         }
 
-        drawShapes = loadedShapes;
-        // Ricostruisci la view
-        for (Shape shape : drawShapes) {
+        // Clear existing shapes
+        drawShapes.clear();
+        drawingPane.getChildren().clear();
+
+        // Add shapes in the correct order
+        for (Shape shape : loadedShapes) {
+            // Create the visual representation
             javafx.scene.shape.Shape fxShape = shape.toFXShape();
             shape.setFXShape(fxShape);
+            
+            // Add to both logical and visual lists in the same order
+            drawShapes.add(shape);
+            drawingPane.getChildren().add(fxShape);
         }
 
-        refreshDrawingPane();
         drawingPaneSizeDynamicUpdate(drawingPane);
     }
 
@@ -572,9 +547,10 @@ public class FXMLDocumentController implements Initializable {
     private void undoLastCommand(MouseEvent event) {
         Command undone = commandHistory.undo();
         if (undone == null) {
+            System.out.println("[DEBUG] No command to undo");
             return;
         }
-        refreshDrawingPane();
+        System.out.println("[DEBUG] Undone command: " + undone.getClass().getSimpleName());
     }
 
     private void updateLayerMenuItems() {
@@ -630,7 +606,8 @@ public class FXMLDocumentController implements Initializable {
 
         if (dx != 0 || dy != 0) {
             for (Shapes.Shape s : drawShapes) {   // lista logica delle forme
-                s.moveBy(dx, dy);                 // sposta logica + nodo FX
+                Command moveCmd = new MoveShapeCommand(s, dx, dy, drawingReceiver);
+                moveCmd.execute();
             }
         }
 
@@ -691,6 +668,9 @@ public class FXMLDocumentController implements Initializable {
         //Proporzione della forma
         double aspectRatio = oldWidth / oldHeight;
 
+        //Proporzione della forma
+        double aspectRatio = oldWidth / oldHeight;
+
         // Campi di testo precompilati con le dimensioni correnti
         TextField widthField = new TextField(String.valueOf(oldWidth));
         TextField heightField = new TextField(String.valueOf(oldHeight));
@@ -734,6 +714,32 @@ public class FXMLDocumentController implements Initializable {
             }
         });
 
+        grid.add(lockRatioCheckBox, 0, 2, 3, 1); //checkbox su riga nuovaAdd commentMore actions
+
+        // Listener per mantenere proporzioni quando il checkbox è attivo
+        widthField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (!isNowFocused && lockRatioCheckBox.isSelected()) {
+                try {
+                    String normalizedNumber = widthField.getText().replace(",", ".");
+                    double newWidth = Double.parseDouble(normalizedNumber);
+                    double newHeight = newWidth / aspectRatio;
+                    heightField.setText(String.format("%.2f", newHeight).replace(".", ","));
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+
+        // Quando si modifica l'altezza e si perde il focus
+        heightField.focusedProperty().addListener((obs, wasFocused, isNowFocused) -> {
+            if (!isNowFocused && lockRatioCheckBox.isSelected()) {
+                try {
+                    String normalizedNumber = heightField.getText().replace(",", ".");
+                    double newHeight = Double.parseDouble(normalizedNumber);
+                    double newWidth = newHeight * aspectRatio;
+                    widthField.setText(String.format("%.2f", newWidth).replace(".", ","));
+                } catch (NumberFormatException ignored) {}
+            }
+        });
+
         // Aggiunge il layout al contenuto del dialogo
         dialog.getDialogPane().setContent(grid);
 
@@ -743,20 +749,20 @@ public class FXMLDocumentController implements Initializable {
         // Gestisce il risultato del dialogo al click su "Applica"
         dialog.setResultConverter(dialogButton -> {
             if (dialogButton == ButtonType.APPLY) {
-                double newWidth = Double.parseDouble(widthField.getText());
-                double newHeight = Double.parseDouble(heightField.getText());
+                try {
+                    String normalizedWidth = widthField.getText().replace(",", ".");
+                    String normalizedHeight = heightField.getText().replace(",", ".");
+                    double newWidth = Double.parseDouble(normalizedWidth);
+                    double newHeight = Double.parseDouble(normalizedHeight);
+                    // Esegui il comando di ridimensionamento
+                    Command resizeCommand = new ResizeCommand(shape, newWidth, newHeight, drawingReceiver);
+                    commandHistory.executeCommand(resizeCommand);
 
-                // Crea ed esegue il comando di ridimensionamento
-                ResizeCommand resizeCommand = new ResizeCommand(shape, newWidth, newHeight);
-                resizeCommand.execute();
-                commandHistory.push(resizeCommand); // salva nella history per supportare undo
-
-                // Aggiorna la vista per riflettere la nuova forma (mai usato)
-                //Node updatedNode = shape.toFXShape(); // può essere utile usarlo per refreshShapeInView
-                refreshDrawingPane();                
-   
-                // Deseleziona la forma dopo l'operazione
-                selectionHandler.setSelectedShape(null);
+                    refreshDrawingPane();
+                    selectionHandler.setSelectedShape(null);
+                } catch (NumberFormatException e) {
+                    shapeBtnSelHandler.showError("Inserire valori numerici validi per larghezza e altezza");
+                }
             }
             return null;
         });
@@ -789,4 +795,5 @@ public class FXMLDocumentController implements Initializable {
             polygonSidesPreviewDots.clear();
         }
     }
+
 }

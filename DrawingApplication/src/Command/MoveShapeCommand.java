@@ -14,23 +14,25 @@ import Shapes.Shape;
  * Incapsula lo spostamento (dx, dy) di una Shape.
  */
 public class MoveShapeCommand implements Command {
-
     private final Shape shape;
-    private final double dx, dy;
+    private final double dx;
+    private final double dy;
+    private final DrawingReceiver receiver;
 
-    public MoveShapeCommand(Shape shape, double dx, double dy) {
+    public MoveShapeCommand(Shape shape, double dx, double dy, DrawingReceiver receiver) {
         this.shape = shape;
         this.dx = dx;
         this.dy = dy;
+        this.receiver = receiver;
     }
 
     @Override
     public void execute() {
-        shape.moveBy(dx, dy);
+        receiver.moveShape(shape, dx, dy);
     }
 
     @Override
     public void undo() {
-        shape.moveBy(-dx, -dy);
+        receiver.moveShape(shape, -dx, -dy);
     }
 }

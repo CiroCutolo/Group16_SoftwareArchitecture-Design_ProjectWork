@@ -22,14 +22,18 @@ public class DrawingStateHistory {
      * 
      * @param command 
      */
-    public void executeCommand(Command command){
-        command.execute();
-        history.push(command);
+    public void executeCommand(Command command) {
+        if (command != null) {
+            command.execute();
+            history.push(command);
+        }
     }
     
     /**
      * Questo metodo serve a rimuovere dalla cronologia di comandi, l'ultimo comando
      * inserito, successivamente all'esecuzione della undo.
+     * 
+     * @return Comando da annullare, o null se la cronologia è vuota
      */
     public Command undo() {
         if (history.isEmpty()) {
@@ -40,6 +44,11 @@ public class DrawingStateHistory {
         return cmd;
     }
     
+    /**
+     * Controlla se la cronologia di comandi è vuota.
+     * 
+     * @return true se la cronologia è vuota, false altrimenti
+     */
     public boolean isEmpty() {
         return history.isEmpty();
     }
