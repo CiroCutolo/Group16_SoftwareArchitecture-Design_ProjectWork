@@ -5,33 +5,49 @@
 package Command;
 
 import Shapes.Shape;
+import java.util.List;
+import javafx.scene.layout.Pane;
 
 /**
- * Command for deleting a shape from the drawing.
- * Uses the DrawingReceiver to perform the actual deletion.
+ * Questa classe si occupa di gestire il comando di eleminazione delle forme.
  * 
  * @author ciroc
  */
-public class DeleteCommand implements Command {
-    private final DrawingReceiver receiver;
-    private final Shape shapeToDelete;
+public class DeleteCommand implements Command{
+    private Pane drawingPane;
+    private List<Shape> drawShapes;
+    private Shape shapeToDelete;
     
-    public DeleteCommand(DrawingReceiver receiver, Shape shapeToDelete) {
-        this.receiver = receiver;
+    public DeleteCommand(Pane drawingPane, List<Shape> drawShapes, Shape shapeToDelete){
+        this.drawShapes = drawShapes;
+        this.drawingPane = drawingPane;
         this.shapeToDelete = shapeToDelete;
     }
 
+    /**
+     * Override del metodo execute definito nell'interfaccia `Command`,
+     * utile a rimuovere la forma dal riquadro di disegno.
+     */ 
     @Override
     public void execute() {
-        if (shapeToDelete != null) {
-            receiver.removeShape(shapeToDelete);
+        if(shapeToDelete != null){
+            drawingPane.getChildren().remove(shapeToDelete.getFXShape());
+            drawShapes.remove(shapeToDelete);
         }
     }
 
+    /**
+     * Override del metodo undo definito nell'interfaccia `Command`, utile
+     * ad annullare la modifica effettuata dall'execute.
+     */
     @Override
     public void undo() {
         if (shapeToDelete != null) {
-            receiver.insertShape(shapeToDelete);
+            javafx.scene.shape.Shape fxShape = shapeToDelete.toFXShape();
+            shapeToDelete.setFXShape(fxShape);
+            drawingPane.getChildren().add(fxShape);
+            drawShapes.add(shapeToDelete);
         }
     }
+    
 }

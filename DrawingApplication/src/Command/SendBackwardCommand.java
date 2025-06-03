@@ -5,30 +5,56 @@
 package Command;
 
 import Shapes.Shape;
+import java.util.Collections;
+import java.util.List;
+import java.util.stream.Collectors;
+import javafx.scene.Group;
+import javafx.scene.layout.Pane;
 
 /**
- * Comando per inviare una forma di un livello in avanti nel disegno.
- * Usa il DrawingReceiver per eseguire l'operazione di manipolazione dei livelli.
  *
  * @author Sterm
  */
 public class SendBackwardCommand implements Command {
     private final Shape shape;
-    private final DrawingReceiver receiver;
+    private final List<Shape> drawShapes;
+    private final Pane drawingPane;
+    private int oldIndex;
+    private boolean hasExecuted = false;
 
-    public SendBackwardCommand(Shape shape, DrawingReceiver receiver) {
+    public SendBackwardCommand(Shape shape, List<Shape> drawShapes, Pane drawingPane) {
         this.shape = shape;
-        this.receiver = receiver;
+        this.drawShapes = drawShapes;
+        this.drawingPane = drawingPane;
     }
 
     @Override
     public void execute() {
-        receiver.sendBackward(shape);
+        oldIndex = drawShapes.indexOf(shape);
+        if (oldIndex > 0) {
+            Collections.swap(drawShapes, oldIndex, oldIndex - 1);
+            redraw();
+            hasExecuted = true;
+        }
     }
+
 
     @Override
     public void undo() {
-        receiver.bringForward(shape);
+        if(!hasExecuted) return;
+        int currentIndex = drawShapes.indexOf(shape);
+        if (currentIndex < drawShapes.size() - 1) {
+            Collections.swap(drawShapes, currentIndex, currentIndex + 1);
+            redraw();
+        }
+    }
+
+    
+    private void redraw() {
+        drawingPane.getChildren().removeIf(node -> !(node instanceof Group));
+        drawingPane.getChildren().addAll(
+            drawShapes.stream().map(Shape::getFXShape).collect(Collectors.toList())
+        );
     }
 }
 

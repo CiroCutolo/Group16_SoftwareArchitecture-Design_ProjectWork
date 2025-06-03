@@ -8,33 +8,44 @@ import Shapes.Shape;
 import javafx.scene.paint.Color;
 
 /**
- * Command for changing the color of a shape.
- * Uses the DrawingReceiver to perform the actual color change.
  *
  * @author Sterm
  */
-public class ChangeColorCommand implements Command {
+public class ChangeColorCommand implements Command{
+
     private final Shape shape;
     private final Color newStroke, newFill;
     private final Color oldStroke, oldFill;
-    private final DrawingReceiver receiver;
 
-    public ChangeColorCommand(Shape shape, Color newStroke, Color newFill, DrawingReceiver receiver) {
+    public ChangeColorCommand(Shape shape, Color newStroke, Color newFill) {
         this.shape = shape;
         this.newStroke = newStroke;
         this.newFill = newFill;
         this.oldStroke = shape.getPerimetralColor();
         this.oldFill = shape.getInternalColor();
-        this.receiver = receiver;
     }
 
     @Override
     public void execute() {
-        receiver.changeShapeColor(shape, newStroke, newFill);
+        shape.setPerimetralColor(newStroke);
+        shape.setInternalColor(newFill);
+        updateFXShape();
     }
+
 
     @Override
     public void undo() {
-        receiver.changeShapeColor(shape, oldStroke, oldFill);
+        shape.setPerimetralColor(oldStroke);
+        shape.setInternalColor(oldFill);
+        updateFXShape();
     }
+
+
+    private void updateFXShape() {
+        javafx.scene.shape.Shape fx = shape.getFXShape();
+        fx.setStroke(shape.getPerimetralColor());
+        fx.setFill(shape.getInternalColor());
+}
+
+
 }

@@ -7,8 +7,9 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Scale;
 
 /**
- * La classe astratta Shape rappresenta una macro-categoria di forme.
- * Mantiene solo lo stato e le proprietà di base di una forma.
+ * La classe astratta Shape rappresenta una macro-categoria di forme.Introduce
+ * il metodo 'toFXShape', in modo da generare correttamente un oggetto di tipo
+ * 'Shape' di JavaFX.
  *
  * @author ciroc
  */
@@ -22,7 +23,7 @@ public abstract class Shape implements Serializable, Cloneable {
     protected double rotation = 0.0;   // gradi cumulativi
     protected boolean mirrorX = false; // specchio orizzontale
     protected boolean mirrorY = false; // specchio verticale
-/**
+    /**
      * Costruttore della forma astratta.
      *
      * @param initialX coordinata X del punto iniziale (click del mouse)
@@ -38,12 +39,9 @@ public abstract class Shape implements Serializable, Cloneable {
     }
     
     /* --- getters/setters --------------------------------------------------- */
-    public double getRotation() { return rotation; }
-    public void setRotation(double rotation) { this.rotation = rotation; }
+    public double  getRotation() { return rotation; }
     public boolean isMirroredX() { return mirrorX; }
-    public void setMirrorX(boolean mirror) { this.mirrorX = mirror; }
     public boolean isMirroredY() { return mirrorY; }
-    public void setMirrorY(boolean mirror) { this.mirrorY = mirror; }
 
     /**
      * Metodo astratto che converte l'oggetto Shape in un oggetto Shape di
@@ -186,7 +184,7 @@ public abstract class Shape implements Serializable, Cloneable {
      * @param dx spostamento orizzontale
      * @param dy spostamento verticale
      */
-    /*public void moveBy(double dx, double dy) {
+    public void moveBy(double dx, double dy) {
         // aggiorna coordinate logiche
         this.initialX += dx;
         this.finalX += dx;
@@ -198,7 +196,7 @@ public abstract class Shape implements Serializable, Cloneable {
             fxShape.setTranslateX(fxShape.getTranslateX() + dx);
             fxShape.setTranslateY(fxShape.getTranslateY() + dy);
         }
-    }*/
+    }
 
     /**
      * Restituisce la larghezza corrente della forma.
@@ -228,10 +226,38 @@ public abstract class Shape implements Serializable, Cloneable {
         return Math.abs(finalY - initialY);
     }
 
+    /**
+     * Ridimensiona la forma modificando larghezza e altezza mantenendo fisse le
+     * coordinate iniziali.
+     * 
+     * Aggiorna le coordinate finali calcolandole a partire dalle dimensioni
+     * nuove, mantenendo fisse le coordinate iniziali (initialX, initialY).
+     * 
+     *
+     * @param newWidth la nuova larghezza da impostare (deve essere positiva)
+     * @param newHeight la nuova altezza da impostare (deve essere positiva)
+     */
+    public void resize(double newWidth, double newHeight) {
+        this.finalX = this.initialX + newWidth;
+        this.finalY = this.initialY + newHeight;
+    }
+    
+    /* --- operazioni di “business” ------------------------------------------ */
+    public void rotate(double angle) {
+        rotation = (rotation + angle) % 360;
+        if (fxShape != null) applyTransformsToNode(fxShape);
+    }
+    public void mirror(boolean horizontal) {
+        if (horizontal) mirrorX = !mirrorX;
+        else            mirrorY = !mirrorY;
+        if (fxShape != null) applyTransformsToNode(fxShape);
+    }
+
     /* --- traduce lo stato logico in trasformazioni JavaFX ------------------ */
     protected void applyTransformsToNode(javafx.scene.shape.Shape node) {
         node.getTransforms().clear();
 
+        // mirror
         double sx = mirrorX ? -1 : 1;
         double sy = mirrorY ? -1 : 1;
         if (mirrorX || mirrorY) {
@@ -241,8 +267,8 @@ public abstract class Shape implements Serializable, Cloneable {
             node.getTransforms().add(new Scale(sx, sy, cx, cy));
         }
 
+        // rotazione
         if (rotation != 0) {
-            System.out.println("Rotation: " + rotation);
             Bounds b = node.getBoundsInLocal();
             double cx = (b.getMinX() + b.getMaxX()) / 2;
             double cy = (b.getMinY() + b.getMaxY()) / 2;

@@ -5,29 +5,37 @@
 package Command;
 
 import Shapes.Shape;
+import java.util.List;
+import javafx.scene.layout.Pane;
 
 /**
- * Command for inserting a new shape into the drawing.
- * Uses the DrawingReceiver to perform the actual insertion.
  *
  * @author Sterm
  */
-public class InsertShapeCommand implements Command {
+public class InsertShapeCommand implements Command{
     private final Shape shape;
-    private final DrawingReceiver receiver;
+    private final List<Shape> drawShapes;
+    private final Pane drawingPane;
 
-    public InsertShapeCommand(Shape shape, DrawingReceiver receiver) {
+    public InsertShapeCommand(Shape shape, List<Shape> drawShapes, Pane drawingPane) {
         this.shape = shape;
-        this.receiver = receiver;
+        this.drawShapes = drawShapes;
+        this.drawingPane = drawingPane;
     }
 
     @Override
     public void execute() {
-        receiver.insertShape(shape);
+        javafx.scene.shape.Shape fxShape = shape.toFXShape();
+        shape.setFXShape(fxShape);
+        drawShapes.add(shape);
+        drawingPane.getChildren().add(fxShape);
     }
+
 
     @Override
     public void undo() {
-        receiver.removeShape(shape);
+        drawShapes.remove(shape);
+        drawingPane.getChildren().remove(shape.getFXShape());
     }
+
 }

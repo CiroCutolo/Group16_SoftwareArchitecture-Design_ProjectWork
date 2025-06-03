@@ -29,3 +29,4 @@ public class SerializablePoint2D implements Serializable {
         return new SerializablePoint2D(p.getX(), p.getY());
     }
 }
+

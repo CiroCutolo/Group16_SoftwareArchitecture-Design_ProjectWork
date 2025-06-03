@@ -7,29 +7,19 @@ package Command;
 import Shapes.Shape;
 
 /**
- * Comando per specchiatura orizzontale o verticale di una forma.
- * Usa il DrawingReceiver per eseguire l'operazione di mirroring.
  *
  * @author genna
  */
 public class MirrorCommand implements Command {
+
     private final Shape shape;
     private final boolean horizontal;
-    private final DrawingReceiver receiver;
 
-    public MirrorCommand(Shape shape, boolean horizontal, DrawingReceiver receiver) {
+    public MirrorCommand(Shape shape, boolean horizontal) {
         this.shape = shape;
         this.horizontal = horizontal;
-        this.receiver = receiver;
     }
 
-    @Override
-    public void execute() {
-        receiver.mirrorShape(shape, horizontal);
-    }
-
-    @Override
-    public void undo() {
-        receiver.mirrorShape(shape, horizontal); // Specchiatura due volte ritorna allo stato originale
-    }
+    @Override public void execute() { shape.mirror(horizontal); }
+    @Override public void undo()    { shape.mirror(horizontal); }
 }
